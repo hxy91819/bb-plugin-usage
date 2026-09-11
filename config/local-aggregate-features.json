@@ -48,6 +48,20 @@
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/46"
         }
       ]
+    },
+    {
+      "branch": "fix/host-command-size-limit",
+      "lastPackaged": {
+        "sourceCommit": "c66424da128116fad1a2cc89fd26d9953b297acf",
+        "aggregateCommit": "e296e26470d76b14075e53737fc66c9fbcb28e83"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 47,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/47"
+        }
+      ]
     }
   ]
 }
