@@ -6,5 +6,48 @@
     "lastIntegratedUpstreamCommit": "0d30874c3630f7e004d5097221be34407c02f3ad",
     "stableTagPattern": null
   },
-  "features": []
+  "features": [
+    {
+      "branch": "feature/codex-profile-sessions",
+      "lastPackaged": {
+        "sourceCommit": "77ce200243673a9fc85ea212a5aba384e89a8402",
+        "aggregateCommit": "78b4e7122466f4d22e1eec71caf0ab5940ae61b8"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 44,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/44"
+        }
+      ]
+    },
+    {
+      "branch": "feature/devin-sqlite-collector",
+      "lastPackaged": {
+        "sourceCommit": "74aa2439a7d31becdffbb6ef153d0e416bfcf812",
+        "aggregateCommit": "6cbb764d1af3a696176b2e301e6c12e601cdd436"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 45,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/45"
+        }
+      ]
+    },
+    {
+      "branch": "feature/dsh-zstd-sessions",
+      "lastPackaged": {
+        "sourceCommit": "e5f063b73fa9044f0181a780a55b11c1c68c6e9f",
+        "aggregateCommit": "2c55b7effb64caaef736a14cb7307d3e5dc72593"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 46,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/46"
+        }
+      ]
+    }
+  ]
 }
