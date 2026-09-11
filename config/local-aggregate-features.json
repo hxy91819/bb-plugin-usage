@@ -76,6 +76,20 @@
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/48"
         }
       ]
+    },
+    {
+      "branch": "feature/proxy-provider-pricing",
+      "lastPackaged": {
+        "sourceCommit": "bbc8ad1934d8925f5ef4c981ee2bbb98c55509a4",
+        "aggregateCommit": "915716f031212f1b16bb1f7d00b7f273eab77b7c"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 55,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/55"
+        }
+      ]
     }
   ]
 }
