@@ -62,6 +62,20 @@
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/47"
         }
       ]
+    },
+    {
+      "branch": "feature/breakdown-tokens-toggle",
+      "lastPackaged": {
+        "sourceCommit": "c1ad1a0adb5c512d69051839d9d6475f8ef8a009",
+        "aggregateCommit": "319cae3c58b5cd7785e9d33dd5a4df9ebda4f65b"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 48,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/48"
+        }
+      ]
     }
   ]
 }
