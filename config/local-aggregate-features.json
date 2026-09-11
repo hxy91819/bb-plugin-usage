@@ -24,8 +24,8 @@
     {
       "branch": "feature/devin-sqlite-collector",
       "lastPackaged": {
-        "sourceCommit": "74aa2439a7d31becdffbb6ef153d0e416bfcf812",
-        "aggregateCommit": "6cbb764d1af3a696176b2e301e6c12e601cdd436"
+        "sourceCommit": "c32ef002a68857326ff41d1237b0b1274fafcfb5",
+        "aggregateCommit": "87a74ca373375e737233ff802e855c4cd1135ead"
       },
       "upstreamIssues": [
         {
