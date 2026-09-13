@@ -101,7 +101,7 @@ describe("host JSON usage collector", () => {
     await writeFile(join(accountRoot, "omnidrome", "sessions", "rollout-extra.jsonl"), rollout("omnidrome-session", 60));
     await writeFile(join(accountRoot, "saiens", "auth.json"), "{}");
 
-    const first = await scan("codex", root, cachePath, { accountRoot });
+    const first = await scan("codex", root, cachePath, { accountRoots: [{ root: accountRoot }] });
     expect(first).toMatchObject({ fileCount: 3, changedFileCount: 3, reusedFileCount: 0, failureCount: 0 });
     const day = localDay("2026-08-09T12:00:00Z");
     expect(first.rows).toEqual(expect.arrayContaining([
@@ -112,9 +112,48 @@ describe("host JSON usage collector", () => {
     expect(first.rows.find((row) => row.account === undefined)?.account).toBeUndefined();
     expect(JSON.stringify(first.rows)).not.toContain("dormant");
 
-    const second = await scan("codex", root, cachePath, { accountRoot });
+    const second = await scan("codex", root, cachePath, { accountRoots: [{ root: accountRoot }] });
     expect(second).toMatchObject({ fileCount: 3, changedFileCount: 0, reusedFileCount: 3, failureCount: 0 });
     expect(second.rows).toEqual(first.rows);
+  });
+
+  it("attributes sibling .codex-* homes and configured homes to their accounts", async () => {
+    const directory = await temporaryDirectory();
+    const home = join(directory, "home");
+    const root = join(home, ".codex", "sessions");
+    const cachePath = join(directory, "cache", "codex.json");
+    const rollout = (id: string, inputTokens: number) => [
+      { timestamp: "2026-08-09T12:00:00Z", type: "session_meta", payload: { id, cwd: `/work/${id}` } },
+      { timestamp: "2026-08-09T12:00:01Z", type: "event_msg", payload: { type: "token_count", info: { last_token_usage: { input_tokens: inputTokens, cached_input_tokens: 0, output_tokens: 5 } } } },
+    ].map((value) => JSON.stringify(value)).join("\n");
+    await mkdir(root, { recursive: true });
+    await mkdir(join(home, ".codex-work", "sessions"), { recursive: true });
+    await mkdir(join(home, ".codex-profiles", "saiens", "sessions"), { recursive: true });
+    await mkdir(join(home, "unrelated"), { recursive: true });
+    await mkdir(join(directory, "elsewhere", "sessions"), { recursive: true });
+    await writeFile(join(root, "rollout-main.jsonl"), rollout("main", 100));
+    await writeFile(join(home, ".codex-work", "sessions", "rollout-work.jsonl"), rollout("work", 40));
+    await writeFile(join(home, ".codex-profiles", "saiens", "sessions", "rollout-extra.jsonl"), rollout("saiens", 60));
+    await writeFile(join(home, "unrelated", "rollout-stray.jsonl"), rollout("stray", 999));
+    await writeFile(join(directory, "elsewhere", "sessions", "rollout-custom.jsonl"), rollout("custom", 80));
+
+    const result = await scan("codex", root, cachePath, {
+      accountRoots: [{ root: join(home, ".codex-profiles") }, { root: home, prefix: ".codex-" }],
+      accountHomes: [{ account: "custom", home: join(directory, "elsewhere") }],
+    });
+    expect(result).toMatchObject({ fileCount: 4, failureCount: 0 });
+    const day = localDay("2026-08-09T12:00:00Z");
+    expect(result.rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ day, project: "main", uncachedInputTokens: 100 }),
+      expect.objectContaining({ day, account: "work", project: "work", uncachedInputTokens: 40 }),
+      expect.objectContaining({ day, account: "saiens", project: "saiens", uncachedInputTokens: 60 }),
+      expect.objectContaining({ day, account: "custom", project: "custom", uncachedInputTokens: 80 }),
+    ]));
+    expect(result.rows).toHaveLength(4);
+    // `.codex-profiles` matched the `.codex-` prefix as a sibling but has no
+    // sessions/ of its own, and `unrelated` never enters the scan.
+    expect(JSON.stringify(result.rows)).not.toContain("profiles");
+    expect(JSON.stringify(result.rows)).not.toContain("stray");
   });
 
   it("does not double-count a profile home linked to the primary Codex home", async () => {
@@ -130,11 +169,37 @@ describe("host JSON usage collector", () => {
     ].join("\n"));
     await symlink(join(home, ".codex"), join(accountRoot, "alias"), "dir");
 
-    const result = await scan("codex", root, cachePath, { accountRoot });
+    const result = await scan("codex", root, cachePath, { accountRoots: [{ root: accountRoot }] });
     expect(result).toMatchObject({ fileCount: 1, failureCount: 0 });
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]).not.toMatchObject({ account: "alias" });
     expect(result.rows[0]).toMatchObject({ uncachedInputTokens: 100 });
+  });
+
+  it("re-applies the current account label to rows reused from cache", async () => {
+    const directory = await temporaryDirectory();
+    const root = join(directory, "sessions");
+    const cachePath = join(directory, "cache", "codex.json");
+    const home = join(directory, "custom-home");
+    await mkdir(join(home, "sessions"), { recursive: true });
+    await writeFile(join(home, "sessions", "rollout-x.jsonl"), [
+      JSON.stringify({ timestamp: "2026-08-09T12:00:00Z", type: "event_msg", payload: { type: "token_count", info: { last_token_usage: { input_tokens: 50, cached_input_tokens: 0, output_tokens: 5 } } } }),
+    ].join("\n"));
+
+    const first = await scan("codex", root, cachePath, { accountHomes: [{ account: "work", home }] });
+    expect(first.rows[0]).toMatchObject({ account: "work", uncachedInputTokens: 50 });
+
+    // The file is unchanged so its rows come from cache; the renamed label
+    // must still take effect instead of serving the stale "work" rows.
+    const renamed = await scan("codex", root, cachePath, { accountHomes: [{ account: "personal", home }] });
+    expect(renamed).toMatchObject({ fileCount: 1, changedFileCount: 0, reusedFileCount: 1 });
+    expect(renamed.rows).toHaveLength(1);
+    expect(renamed.rows[0]).toMatchObject({ account: "personal", uncachedInputTokens: 50 });
+
+    // An empty configured label drops attribution again: rows merge back
+    // into the base Codex agent.
+    const untagged = await scan("codex", root, cachePath, { accountHomes: [{ account: "", home }] });
+    expect(untagged.rows[0]?.account).toBeUndefined();
   });
 
   it.each([
