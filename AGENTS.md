@@ -19,7 +19,7 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 
 | Branch | Source commit | Aggregate commit | Upstream feedback |
 |---|---|---|---|
-| feature/codex-profile-sessions | 77ce200 | 78b4e71 | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44) |
+| feature/codex-profile-sessions | 4f86277 | 7e784f1 | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44) |
 | feature/devin-sqlite-collector | c32ef00 | 6cbb764, 87a74ca | [#45](https://github.com/MayankBansal12/bb-plugin-usage/issues/45) |
 | feature/dsh-zstd-sessions | e5f063b | 2c55b7e | [#46](https://github.com/MayankBansal12/bb-plugin-usage/issues/46) |
 | fix/host-command-size-limit | c66424d | e296e26 | [#47](https://github.com/MayankBansal12/bb-plugin-usage/issues/47) |
