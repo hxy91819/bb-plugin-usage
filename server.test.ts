@@ -75,7 +75,7 @@ function commandTextFor(command: string, stagedFiles: Map<string, string>) {
 
 describe("JSON agent roots", () => {
   it("points Antigravity at the provider bridge's own usage log", () => {
-    expect(jsonAgentRoots("/home/user", "antigravity", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+    expect(jsonAgentRoots("/home/user", "antigravity", { piSessionRoots: "", primeSessionRoots: "", codexProfileHomes: "" })).toEqual([
       "/home/user/.antigravity-acp/usage.jsonl",
     ]);
   });
@@ -87,7 +87,7 @@ describe("JSON agent roots", () => {
   });
 
   it("includes Prime root and recursive-agent sessions", () => {
-    expect(jsonAgentRoots("/home/user", "prime", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+    expect(jsonAgentRoots("/home/user", "prime", { piSessionRoots: "", primeSessionRoots: "", codexProfileHomes: "" })).toEqual([
       "/home/user/.prime/agent/sessions",
       "/home/user/.prime/agent/session-artifacts",
     ]);
@@ -97,6 +97,7 @@ describe("JSON agent roots", () => {
     expect(jsonAgentRoots("/home/user", "prime", {
       piSessionRoots: "",
       primeSessionRoots: "~/prime-sessions; /var/lib/prime/sessions/",
+      codexProfileHomes: "",
     })).toEqual([
       "/home/user/.prime/agent/sessions",
       "/home/user/.prime/agent/session-artifacts",
@@ -108,7 +109,7 @@ describe("JSON agent roots", () => {
   });
 
   it("includes the bb pi provider bridge session directory by default", () => {
-    expect(jsonAgentRoots("/home/user", "pi", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+    expect(jsonAgentRoots("/home/user", "pi", { piSessionRoots: "", primeSessionRoots: "", codexProfileHomes: "" })).toEqual([
       "/home/user/.pi/agent/sessions",
       "/home/user/.bb/pi-bridge-sessions",
     ]);
@@ -118,6 +119,7 @@ describe("JSON agent roots", () => {
     expect(jsonAgentRoots("/home/user", "pi", {
       piSessionRoots: "~/.prime/agent; ~/.prime/agent/sessions; ~/.prime/agent/session-artifacts; /data/pi; /data/prime/sessions",
       primeSessionRoots: "/data/prime/sessions",
+      codexProfileHomes: "",
     })).toEqual([
       "/home/user/.pi/agent/sessions",
       "/home/user/.bb/pi-bridge-sessions",
@@ -167,7 +169,7 @@ describe("sync RPC", () => {
     const stagedFiles = new Map<string, string>();
 
     const bb = {
-      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
+      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "", codexProfileHomes: "" }) })) },
       storage: {
         database: vi.fn(() => db),
         migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
@@ -336,7 +338,12 @@ describe("sync RPC", () => {
     // Decode the generated collector script's baked-in scan input so the test
     // can answer codex scans with profile-tagged rows and assert the scan
     // covers the account root.
-    function scanInputFromCommand(command: string): { agentId?: string; roots?: string[]; accountRoot?: string } | null {
+    function scanInputFromCommand(command: string): {
+      agentId?: string;
+      roots?: string[];
+      accountRoots?: Array<{ root: string; prefix?: string }>;
+      accountHomes?: Array<{ account: string; home: string }>;
+    } | null {
       const outer = command.match(/Buffer\.from\("([A-Za-z0-9+/=]+)"/);
       if (!outer) return null;
       const source = gunzipSync(Buffer.from(outer[1]!, "base64")).toString("utf8");
@@ -361,7 +368,14 @@ describe("sync RPC", () => {
     });
 
     const bb = {
-      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
+      settings: {
+        define: vi.fn(() => ({
+          get: async () => ({
+            piSessionRoots: "", primeSessionRoots: "",
+            codexProfileHomes: "work=/data/work; ~/extra; /alt/codex",
+          }),
+        })),
+      },
       storage: {
         database: vi.fn(() => db),
         migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
@@ -409,7 +423,17 @@ describe("sync RPC", () => {
     const codexScan = [...commandsByTerminalId.values()].map(scanInputFromCommand).find((input) => input?.agentId === "codex");
     expect(codexScan).toMatchObject({
       roots: ["/home/user/.codex/sessions"],
-      accountRoot: "/home/user/.codex-profiles",
+      accountRoots: [
+        { root: "/home/user/.codex-profiles" },
+        { root: "/home/user", prefix: ".codex-" },
+      ],
+      // work is named explicitly, ~/extra gets its basename, and the bare
+      // /alt/codex home stays untagged so it merges into the base Codex agent.
+      accountHomes: [
+        { account: "work", home: "/data/work" },
+        { account: "extra", home: "/home/user/extra" },
+        { account: "", home: "/alt/codex" },
+      ],
     });
 
     const providers = db.prepare(
