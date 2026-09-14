@@ -4,7 +4,7 @@ import { normalizeProviderId, resolvePricing, type PricingStatus } from "./lib/p
 // a per-account CODEX_HOME (e.g. ~/.codex-profiles/<name>, ~/.codex-<name>, or
 // a configured home), so each account stays a distinct agent in grouping and
 // filters instead of merging into "codex".
-export type AgentId = "codex" | "claude" | "devin" | "dsh" | "fx" | "grok" | "opencode" | "pi" | "prime" | "antigravity" | "thaura" | `codex-${string}`;
+export type AgentId = "codex" | "claude" | "codebuddy" | "cursor" | "devin" | "dsh" | "fx" | "grok" | "opencode" | "pi" | "prime" | "antigravity" | "thaura" | `codex-${string}`;
 
 export type UsageRecord = {
   eventKey: string;
@@ -319,6 +319,8 @@ export function parseHostUsageAggregates(content: string, agentId: Exclude<Agent
 
   const agentName = agentId === "codex" ? "Codex"
     : agentId === "claude" ? "Claude Code"
+    : agentId === "codebuddy" ? "CodeBuddy"
+    : agentId === "cursor" ? "Cursor Agent"
     : agentId === "devin" ? "Devin"
     : agentId === "dsh" ? "DeepSeek Harness"
     : agentId === "grok" ? "Grok Agent"
