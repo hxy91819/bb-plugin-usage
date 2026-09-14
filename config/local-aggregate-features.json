@@ -8,6 +8,14 @@
   },
   "features": [
     {
+      "branch": "feature/additional-agent-usage",
+      "lastPackaged": {
+        "sourceCommit": "d946009507da3a039d83ae65325c60ca3c0aea0a",
+        "aggregateCommit": "eee67ab21a00d5cd6fea1070a9dc19cdced076b6"
+      },
+      "upstreamIssues": []
+    },
+    {
       "branch": "feature/codex-profile-sessions",
       "lastPackaged": {
         "sourceCommit": "4f86277e2aaf6d75132403a51fe3f20a33611150",
