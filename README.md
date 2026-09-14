@@ -6,7 +6,7 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 
 ## Features
 
-- Collect usage from Codex, Claude Code, CodeBuddy, Cursor Agent (opt-in token hook), DeepSeek Harness, Devin, FX, Grok Agent, OpenCode, Pi, Prime Agent, Antigravity, and Thaura.
+- Collect usage from Codex, Claude Code, CodeBuddy, GitHub Copilot, Cursor Agent (opt-in token hook), DeepSeek Harness, Devin, FX, Grok Agent, OpenCode, Pi, Prime Agent, Antigravity, and Thaura.
 - Separate the coding agent from the underlying model provider.
 - Group charts and usage shares by agent or model provider.
 - Switch the chart, provider shares, and breakdown between cost and tokens, so unpriced usage stays visible.
@@ -22,6 +22,7 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 - Codex: `~/.codex/sessions/**/rollout-*.jsonl`, plus per-account homes for extra Codex accounts — `~/.codex-profiles/*/sessions/**/rollout-*.jsonl` and sibling `~/.codex-*/sessions/**/rollout-*.jsonl` (the layouts used by Codex profile managers and ACP multi-account bridges), plus optional custom CODEX_HOME directories in plugin settings; each account reports as its own agent, `Codex (<name>)`
 - Claude Code: `~/.claude/projects/**/*.jsonl`
 - CodeBuddy: `~/.codebuddy/projects/**/*.jsonl`. Also honors `CODEBUDDY_CONFIG_DIR` when available in the host scan environment. Counts assistant/API response usage, including tool-call responses; copied messages are deduplicated. Turn summaries, credits, and tool results are not counted.
+- GitHub Copilot CLI: `~/.copilot/session-state/**/events.jsonl`. Reads each completed session's native `session.shutdown` per-model token totals; active sessions appear after they close. Premium-request multipliers are not treated as USD costs.
 - Cursor Agent: `~/.cursor/usage.jsonl`, written by the opt-in [token hook](docs/additional-agent-usage.md#cursor-agent-hook). Requires a Cursor CLI version that supplies token counters to `afterAgentResponse`; this records future usage, not historical `store.db` conversations.
 - Devin: `~/.local/share/devin/cli/sessions.db` — the Devin CLI's SQLite session store, opened read-only (`$XDG_DATA_HOME` is honored). Devin runs in BB through the `acp-devin` provider and writes no JSONL session logs.
 - DeepSeek Harness: `~/.dsh/sessions/*/*/session.v3.jsonl.zstd` (Zstandard-compressed JSONL; requires Node.js 22.15+ on the machine)
