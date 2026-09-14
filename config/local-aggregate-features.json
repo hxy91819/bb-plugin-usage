@@ -98,6 +98,14 @@
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/55"
         }
       ]
+    },
+    {
+      "branch": "feature/copilot-session-usage",
+      "lastPackaged": {
+        "sourceCommit": "70c14dbc6dce5e8b196f95b7e1f488afd2bd92a1",
+        "aggregateCommit": "98510b43a400aacddb42804425e5a6a17e2065fb"
+      },
+      "upstreamIssues": []
     }
   ]
 }

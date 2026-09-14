@@ -26,4 +26,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | fix/host-command-size-limit | c66424d | e296e26 | [#47](https://github.com/MayankBansal12/bb-plugin-usage/issues/47) |
 | feature/breakdown-tokens-toggle | c1ad1a0 | 319cae3 | [#48](https://github.com/MayankBansal12/bb-plugin-usage/issues/48) |
 | feature/proxy-provider-pricing | bbc8ad1 | 915716f | [#55](https://github.com/MayankBansal12/bb-plugin-usage/issues/55) |
+| feature/copilot-session-usage | 70c14db | 98510b4 | Not submitted |
 <!-- open-source-fork-maintenance:end -->
