@@ -352,6 +352,15 @@ export function UsageDashboardSkeleton() {
           </div>
 
           <div className={`mt-3 overflow-hidden ${CARD_CLASSES}`}>
+            <div className="sm:flex sm:items-stretch">
+              {/* donut placeholder: above rows on narrow, beside the table on wide */}
+              <div className="flex items-center justify-center border-b border-border/60 px-5 py-4 sm:shrink-0 sm:border-b-0 sm:border-r">
+                <div className="relative size-[132px]">
+                  <Shimmer className="size-full rounded-full" />
+                  <div className="absolute inset-[22px] rounded-full bg-background" />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
             {/* wide layouts: the real table header */}
             <table className="hidden w-full border-collapse text-sm sm:table">
               <thead>
@@ -368,6 +377,7 @@ export function UsageDashboardSkeleton() {
                   <tr key={row} className="border-b border-border/60 last:border-0">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
+                        <Shimmer className="size-2 shrink-0 rounded-full" />
                         <Shimmer className="size-[18px] shrink-0 rounded-[4px]" />
                         <Shimmer className="h-3.5 w-40 rounded" style={{ animationDelay: `${-row * 0.18}s` }} />
                       </div>
@@ -398,6 +408,7 @@ export function UsageDashboardSkeleton() {
                 <div key={row} className="border-t border-border/60 px-3.5 py-3 first:border-t-0">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <Shimmer className="size-2 shrink-0 rounded-full" />
                       <Shimmer className="size-[18px] shrink-0 rounded-[4px]" />
                       <Shimmer className="h-3.5 w-full max-w-[150px] rounded" style={{ animationDelay: `${-row * 0.18}s` }} />
                     </div>
@@ -410,6 +421,8 @@ export function UsageDashboardSkeleton() {
                   </div>
                 </div>
               ))}
+            </div>
+              </div>
             </div>
           </div>
         </section>
