@@ -80,6 +80,14 @@
       "upstreamIssues": []
     },
     {
+      "branch": "fix/stacked-chart-boundaries",
+      "lastPackaged": {
+        "sourceCommit": "c3ce786788d227b73d1b99b93a768898afedc6f8",
+        "aggregateCommit": "f437025ed558102f77cb9048ec2824ffe6f284ae"
+      },
+      "upstreamIssues": []
+    },
+    {
       "branch": "feature/breakdown-tokens-toggle",
       "lastPackaged": {
         "sourceCommit": "c1ad1a0adb5c512d69051839d9d6475f8ef8a009",

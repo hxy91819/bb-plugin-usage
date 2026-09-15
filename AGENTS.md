@@ -25,6 +25,7 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/dsh-zstd-sessions | e5f063b | 2c55b7e | [#46](https://github.com/MayankBansal12/bb-plugin-usage/issues/46) |
 | fix/host-command-size-limit | c66424d | e296e26 | [#47](https://github.com/MayankBansal12/bb-plugin-usage/issues/47) |
 | fix/codebuddy-dsh-pricing | 95b8461 | def8c95 | Not submitted |
+| fix/stacked-chart-boundaries | c3ce786 | f437025 | Not submitted |
 | feature/breakdown-tokens-toggle | c1ad1a0 | 319cae3 | [#48](https://github.com/MayankBansal12/bb-plugin-usage/issues/48) |
 | feature/breakdown-share-donut | cc7f6d7 | 0bc7ec3, 1dbe400 | Not submitted |
 | feature/proxy-provider-pricing | bbc8ad1 | 915716f | [#55](https://github.com/MayankBansal12/bb-plugin-usage/issues/55) |
