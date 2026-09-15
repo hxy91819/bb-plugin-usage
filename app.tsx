@@ -1191,6 +1191,13 @@ function UsageDashboard() {
 
   const days = useMemo(() => rangeDays(range), [range]);
 
+  // Hooks must run before the early returns below, so the donut memo lives
+  // here even though `breakdown` is only consumed after them.
+  const breakdown = breakdownMode === "model" ? modelBreakdown
+    : breakdownMode === "project" ? projectBreakdown
+    : dayBreakdown;
+  const breakdownDonut = useMemo(() => buildBreakdownDonut(breakdown, metricMode), [breakdown, metricMode]);
+
   useEffect(() => setBreakdownPage(1), [breakdownMode, metricMode, machine, range]);
 
   useEffect(() => {
@@ -1267,11 +1274,7 @@ function UsageDashboard() {
     sources: visibleSources,
     hasRecordsOutsideView: data.records.some((record) => machine === "all" || record.machineId === machine),
   });
-  const breakdown = breakdownMode === "model" ? modelBreakdown
-    : breakdownMode === "project" ? projectBreakdown
-    : dayBreakdown;
   const paginatedBreakdown = paginateItems(breakdown, breakdownPage, BREAKDOWN_PAGE_SIZE);
-  const breakdownDonut = useMemo(() => buildBreakdownDonut(breakdown, metricMode), [breakdown, metricMode]);
   const breakdownGroupLabel = breakdownMode === "model" ? "models" : breakdownMode === "project" ? "projects" : "days";
   const donutBesideTable = contentWidth >= 1060;
   const activeDays = new Set(rows.map((row) => row.day)).size;
