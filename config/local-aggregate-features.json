@@ -82,7 +82,7 @@
     {
       "branch": "fix/stacked-chart-boundaries",
       "lastPackaged": {
-        "sourceCommit": "c3ce786788d227b73d1b99b93a768898afedc6f8",
+        "sourceCommit": "c3ce786e4207e99e591e6c00043e769dba41a1fd",
         "aggregateCommit": "f437025ed558102f77cb9048ec2824ffe6f284ae"
       },
       "upstreamIssues": []
