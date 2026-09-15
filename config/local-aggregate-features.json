@@ -72,6 +72,14 @@
       ]
     },
     {
+      "branch": "fix/codebuddy-dsh-pricing",
+      "lastPackaged": {
+        "sourceCommit": "95b84616f86dca828448c56e0a208fac8e1b86f3",
+        "aggregateCommit": "def8c95cd2c8a917ff0b261d0a1ffa4e3fe72917"
+      },
+      "upstreamIssues": []
+    },
+    {
       "branch": "feature/breakdown-tokens-toggle",
       "lastPackaged": {
         "sourceCommit": "c1ad1a0adb5c512d69051839d9d6475f8ef8a009",
