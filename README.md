@@ -6,7 +6,7 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 
 ## Features
 
-- Collect usage from Codex, Claude Code, CodeBuddy, GitHub Copilot, Cursor Agent (opt-in token hook), DeepSeek Harness, Devin, FX, Grok Agent, OpenCode, Pi, Prime Agent, Antigravity, and Thaura.
+- Collect usage from Amp, Codex, Claude Code, CodeBuddy, GitHub Copilot, Cursor Agent (opt-in token hook), DeepSeek Harness, Devin, FX, Grok Agent, OpenCode, Pi, Prime Agent, Antigravity, and Thaura.
 - Separate the coding agent from the underlying model provider.
 - Group charts and usage shares by agent or model provider.
 - Switch the chart, provider shares, and breakdown between cost and tokens, so unpriced usage stays visible.
@@ -20,6 +20,7 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 
 ## Supported data sources
 
+- Amp: account threads discovered with `amp threads list --include-archived --json` and reduced from `amp threads export` on each host. Requires an installed, signed-in Amp CLI. Exact per-message input, cache-read, cache-creation, and output tokens are aggregated locally; thread content never leaves the host process. A metadata-only cache avoids exporting unchanged threads. Account/thread identities deduplicate the same usage when the account is available on several enrolled machines. Amp credits and linked-provider subscriptions are not API-equivalent USD, so Amp cost remains unknown.
 - Codex: `~/.codex/sessions/**/rollout-*.jsonl`, plus `~/.codex-profiles/*/sessions/**/rollout-*.jsonl` for extra Codex accounts exposed as ACP providers (e.g. by multi-account bridges); each profile reports as its own agent, `Codex (<name>)`
 - Claude Code: `~/.claude/projects/**/*.jsonl`
 - CodeBuddy: `~/.codebuddy/projects/**/*.jsonl`. Also honors `CODEBUDDY_CONFIG_DIR` when available in the host scan environment. Counts assistant/API response usage, including tool-call responses; copied messages are deduplicated. Turn summaries, credits, and tool results are not counted.
@@ -37,7 +38,7 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 - OpenCode Go limits: plan windows from `https://opencode.ai/zen/go/v1/usage`, authenticated with the `opencode-go` credential in `~/.local/share/opencode/auth.json` on each machine
 - Account Pooler limits: non-secret account summaries from the enabled BB `account-pool` plugin’s `account.list` RPC, including Codex limit windows and Claude five-hour, weekly, and model-family limits. API key accounts show that subscription limits are unavailable. This adds quota cards, not per-account token or cost attribution. Pool refresh failures retain the last successful snapshot with a warning; an absent or disabled pool plugin needs no configuration.
 
-JSON-log collection requires Node.js on each enrolled machine. Logs are streamed and reduced to usage metadata on that machine, so large histories are not transferred through BB's file API. A metadata-only per-file cache in `~/.cache/bb-plugin-usage/json-log-scan-v1/` makes later syncs reparse only changed files. The initial 365-day scan can take longer on machines with large histories.
+Host-side collection requires Node.js on each enrolled machine. Logs and Amp thread exports are reduced to usage metadata on that machine, so large histories and conversation content are not transferred through BB's file API. Metadata-only caches under `~/.cache/bb-plugin-usage/` make later syncs reparse only changed files or threads. The initial 365-day scan can take longer on machines with large histories.
 
 Devin collection requires Node.js 22.13 or newer (for `node:sqlite`) on each enrolled machine. The session database is queried read-only and reduced to per-day token aggregates on the host; only usage metadata fields are extracted, so prompts and message content never leave the machine. A missing database reports as no data, while a database that exists but cannot be read (for example under an older Node.js) surfaces as a sync error for the Devin source only. Devin records ACU totals rather than per-request USD, so its usage shows token counts with unknown cost.
 
