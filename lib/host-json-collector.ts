@@ -5,10 +5,10 @@ import type { AgentId, HostUsageAggregate } from "../collectors";
 
 // Agents collected by walking JSONL session logs. "devin" is excluded: its
 // usage lives in a SQLite database handled by devin-sqlite-collector.ts.
-export type HostJsonAgentId = Exclude<AgentId, "opencode" | "devin">;
+export type HostJsonAgentId = Exclude<AgentId, "amp" | "opencode" | "devin">;
 
 // Agents whose host scan emits the shared aggregate-row wire format.
-export type HostScanAgentId = Exclude<AgentId, "opencode">;
+export type HostScanAgentId = Exclude<AgentId, "amp" | "opencode">;
 
 export type HostJsonScanInput = {
   agentId: HostJsonAgentId;
