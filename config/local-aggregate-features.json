@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "aggregate": {
+    "branch": "local/aggregate",
+    "upstreamRef": "origin/main",
+    "lastIntegratedUpstreamCommit": "7255dc925e764041a810717f62e3b0e272855445",
+    "stableTagPattern": null
+  },
+  "features": [
+    {
+      "branch": "feature/additional-agent-usage",
+      "lastPackaged": {
+        "sourceCommit": "804400226bce8e8ab340e50fb4b6a6fb16fb668f",
+        "aggregateCommit": "ca6c95f75f5feab7c968f872f2e743487d66fe03"
+      },
+      "upstreamIssues": []
+    },
+    {
+      "branch": "feature/codex-profile-sessions",
+      "lastPackaged": {
+        "sourceCommit": "f75a2c4164a2814f1241ca524ae2b8c4882ca6b5",
+        "aggregateCommit": "af284824ab6ecac4500b45fee621b9200f4c40dc"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 44,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/44"
+        }
+      ]
+    },
+    {
+      "branch": "fix/codebuddy-dsh-pricing",
+      "lastPackaged": {
+        "sourceCommit": "eeb8a2e4320ac47d4c3bef68896d3bd0668478d1",
+        "aggregateCommit": "0061b0f737f6196a62e590d5419c4606d4b5cd58"
+      },
+      "upstreamIssues": []
+    },
+    {
+      "branch": "fix/stacked-chart-boundaries",
+      "lastPackaged": {
+        "sourceCommit": "6c9d4da11cd086ee4cac752aff3057d77f55cdeb",
+        "aggregateCommit": "78a284fa2c9aaa630e7b830d11a5abece7de9d14"
+      },
+      "upstreamIssues": []
+    },
+    {
+      "branch": "feature/breakdown-tokens-toggle",
+      "lastPackaged": {
+        "sourceCommit": "96256f694f439cc1d44707321343b80bd714e643",
+        "aggregateCommit": "93db3ad836974641d6f72a4bac4efce8cd00f066"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 48,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/48"
+        }
+      ]
+    },
+    {
+      "branch": "feature/copilot-session-usage",
+      "lastPackaged": {
+        "sourceCommit": "787081e49a8272f53d9326f8b5a0e00c639bb10c",
+        "aggregateCommit": "22733467e8e9510eaf3ca163fd069202a52cdcdb"
+      },
+      "upstreamIssues": []
+    },
+    {
+      "branch": "feature/breakdown-share-donut",
+      "lastPackaged": {
+        "sourceCommit": "10fdf0e2f9bd0ad2867a72217ffcc3afec58ddc5",
+        "aggregateCommit": "4ec904adddd2dd03b384f94e10a3a96062697f20"
+      },
+      "upstreamIssues": []
+    },
+    {
+      "branch": "feature/amp-provider-usage",
+      "lastPackaged": {
+        "sourceCommit": "08d7ed8d9419f61f01c5c04beb5a0554034ec21e",
+        "aggregateCommit": "345d58c56b2b223af09abd794865fc9b9f567255"
+      },
+      "upstreamIssues": []
+    }
+  ]
+}
