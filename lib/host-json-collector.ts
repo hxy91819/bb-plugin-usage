@@ -80,7 +80,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   const scanEnd = "__BB_USAGE_SCAN_END__";
   const input = JSON.parse(buffer.from(encodedInput, "base64").toString("utf8")) as HostJsonScanInput;
   // v6: replace repeated DSH attempt samples and add Copilot summaries.
-  const cacheVersion = input.agentId === "dsh" || input.agentId === "copilot" ? 6 : 5;
+  const cacheVersion = 6;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "codebuddy", "copilot", "cursor", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
   if (!allowedAgents.has(input.agentId)) throw new Error("Unsupported usage agent.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.sinceDay)) throw new Error("Invalid usage history boundary.");
