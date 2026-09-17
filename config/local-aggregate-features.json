@@ -78,8 +78,8 @@
     {
       "branch": "feature/amp-provider-usage",
       "lastPackaged": {
-        "sourceCommit": "08d7ed8d9419f61f01c5c04beb5a0554034ec21e",
-        "aggregateCommit": "345d58c56b2b223af09abd794865fc9b9f567255"
+        "sourceCommit": "af96bb2901797f66cc6feeade7fd95dbacbadadb",
+        "aggregateCommit": "1473751569f72db7e09c2779e9629a737cb9f2f7"
       },
       "upstreamIssues": []
     }

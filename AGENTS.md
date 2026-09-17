@@ -26,5 +26,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/breakdown-tokens-toggle | 96256f6 | 93db3ad | [#48](https://github.com/MayankBansal12/bb-plugin-usage/issues/48) |
 | feature/copilot-session-usage | 787081e | 8254384, 2273346 | Not submitted |
 | feature/breakdown-share-donut | 10fdf0e | a86246c, 4ec904a | Not submitted |
-| feature/amp-provider-usage | 08d7ed8 | 42082a1, b1e3fed, 345d58c | Not submitted |
+| feature/amp-provider-usage | af96bb2 | 42082a1, b1e3fed, 345d58c, 7e9f996, bfb2ed3, 1473751 | Not submitted |
 <!-- open-source-fork-maintenance:end -->
