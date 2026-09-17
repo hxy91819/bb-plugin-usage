@@ -24,7 +24,6 @@ type Range = 7 | 30 | 90;
 type MetricMode = "cost" | "tokens";
 type BreakdownMode = "model" | "project" | "day";
 type DimensionMode = "agent" | "provider";
-type CacheHitRateMode = "agent" | "model";
 
 const BREAKDOWN_PAGE_SIZE = 10;
 const SHOW_USAGE_LIMITS_STORAGE_KEY = "bb-plugin-usage:show-usage-limits";
@@ -581,7 +580,7 @@ function ProviderShareRow({
   mode,
   total,
 }: {
-  item: { id: string; name: string; cost: number; tokens: number; unknown?: boolean };
+  item: { id: string; name: string; cost: number; tokens: number; unknown?: boolean; cacheRate?: CacheHitRateGroup };
   mode: MetricMode;
   total: number;
 }) {
@@ -612,10 +611,10 @@ function ProviderShareRow({
       </div>
       <div className="mt-2 text-xs text-muted-foreground">
         {mode === "cost"
-          ? <>{percentage(item.cost, total)} of cost · {compact(item.tokens)} tokens</>
+          ? <>{percentage(item.cost, total)} of cost · {compact(item.tokens)} tokens{item.cacheRate && <> · <CacheRateValue item={item.cacheRate} /> cache hit</>}</>
           : item.unknown && item.cost === 0
-            ? <>{percentage(item.tokens, total)} of tokens · <span title="Some usage has no recorded cost or known catalog rate; totals exclude that usage.">cost unknown</span></>
-            : <>{percentage(item.tokens, total)} of tokens · {money(item.cost)}{item.unknown ? "+" : ""}</>}
+            ? <>{percentage(item.tokens, total)} of tokens · <span title="Some usage has no recorded cost or known catalog rate; totals exclude that usage.">cost unknown</span>{item.cacheRate && <> · <CacheRateValue item={item.cacheRate} /> cache hit</>}</>
+            : <>{percentage(item.tokens, total)} of tokens · {money(item.cost)}{item.unknown ? "+" : ""}{item.cacheRate && <> · <CacheRateValue item={item.cacheRate} /> cache hit</>}</>}
       </div>
     </div>
   );
@@ -991,9 +990,7 @@ function UsageDashboard() {
   const [chartGroup, setChartGroup] = useState<DimensionMode>("agent");
   const [metricMode, setMetricMode] = useState<MetricMode>("tokens");
   const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("model");
-  const [cacheHitRateMode, setCacheHitRateMode] = useState<CacheHitRateMode>("agent");
   const [mobileSection, setMobileSection] = useState<"chart" | "breakdown">("chart");
-  const [cacheHitRatePage, setCacheHitRatePage] = useState(1);
   const [breakdownPage, setBreakdownPage] = useState(1);
   const [breakdownHover, setBreakdownHover] = useState<string | null>(null);
   const [syncRequested, setSyncRequested] = useState(false);
@@ -1138,9 +1135,16 @@ function UsageDashboard() {
     };
   }, [rows, range]);
 
+  const agentCacheHitRates = useMemo(() => new Map(
+    cacheHitRateGroups(rows, "agent").map((item) => [item.agentId, item]),
+  ), [rows]);
+  const modelCacheHitRates = useMemo(() => new Map(
+    cacheHitRateGroups(rows, "model").map((item) => [`${item.agentId}\0${item.model}`, item]),
+  ), [rows]);
+
   type BreakdownRow = {
     key: string; label: string; agent: string; agentId: string; provider: string; providerId: string;
-    cost: number; tokens: number; unknown?: boolean;
+    cost: number; tokens: number; unknown?: boolean; cacheRate?: CacheHitRateGroup;
     // Only project rows fold several agents into one badge; the folded ones are
     // listed here so the `+N` suffix can name them on hover.
     otherAgents?: Array<{ id: string; name: string; cost: number; tokens: number }>;
@@ -1156,14 +1160,18 @@ function UsageDashboard() {
     const map = new Map<string, BreakdownRow>();
     for (const row of rows) {
       const key = `${row.agentId}:${row.modelProviderId}:${row.model}`;
-      const current: BreakdownRow = map.get(key) ?? { key, label: row.model, agent: row.agentName, agentId: row.agentId, provider: row.modelProviderName, providerId: row.modelProviderId, cost: 0, tokens: 0 };
+      const current: BreakdownRow = map.get(key) ?? {
+        key, label: row.model, agent: row.agentName, agentId: row.agentId,
+        provider: row.modelProviderName, providerId: row.modelProviderId, cost: 0, tokens: 0,
+        cacheRate: modelCacheHitRates.get(`${row.agentId}\0${row.model}`),
+      };
       current.unknown = current.unknown || row.pricingStatus === "unknown";
       current.cost += row.costUsd;
       current.tokens += row.processedTokens;
       map.set(key, current);
     }
     return [...map.values()].sort(byMetric);
-  }, [rows, byMetric]);
+  }, [rows, byMetric, modelCacheHitRates]);
 
   // Projects can be worked on from several agents and providers, so a row keeps
   // the dominant one by the active metric for its badge instead of claiming a
@@ -1219,9 +1227,7 @@ function UsageDashboard() {
     : breakdownMode === "project" ? projectBreakdown
     : dayBreakdown;
   const breakdownDonut = useMemo(() => buildBreakdownDonut(breakdown, metricMode), [breakdown, metricMode]);
-  const cacheHitRates = useMemo(() => cacheHitRateGroups(rows, cacheHitRateMode), [rows, cacheHitRateMode]);
 
-  useEffect(() => setCacheHitRatePage(1), [cacheHitRateMode, machine, range]);
   useEffect(() => setBreakdownPage(1), [breakdownMode, metricMode, machine, range]);
 
   useEffect(() => {
@@ -1277,6 +1283,7 @@ function UsageDashboard() {
       cost: dimensionRows.reduce((sum, row) => sum + row.costUsd, 0),
       tokens: dimensionRows.reduce((sum, row) => sum + row.processedTokens, 0),
       unknown: dimensionRows.some((row) => row.pricingStatus === "unknown"),
+      cacheRate: shareDimension === "agent" ? agentCacheHitRates.get(item.id) : undefined,
     };
   }).sort(byMetric);
   const metricTotal = metricMode === "cost" ? totals.cost : totals.processed;
@@ -1298,7 +1305,6 @@ function UsageDashboard() {
     sources: visibleSources,
     hasRecordsOutsideView: data.records.some((record) => machine === "all" || record.machineId === machine),
   });
-  const paginatedCacheHitRates = paginateItems(cacheHitRates, cacheHitRatePage, BREAKDOWN_PAGE_SIZE);
   const paginatedBreakdown = paginateItems(breakdown, breakdownPage, BREAKDOWN_PAGE_SIZE);
   const breakdownGroupLabel = breakdownMode === "model" ? "models" : breakdownMode === "project" ? "projects" : "days";
   const donutBesideTable = contentWidth >= 1060;
@@ -1486,82 +1492,6 @@ function UsageDashboard() {
                 ))}
               </div>
             </section>
-
-            <section>
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                <div>
-                  <h2 className="text-sm font-semibold">Cache hit rate</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">Cache reads ÷ total input; cache creation counts as a miss.</p>
-                </div>
-                <ToggleGroup
-                  value={cacheHitRateMode}
-                  onChange={setCacheHitRateMode}
-                  label="Cache hit rate grouping"
-                  options={[{ value: "agent", label: "Agent" }, { value: "model", label: "Model" }]}
-                />
-              </div>
-              {compactView ? (
-                <div className={`mt-3 overflow-hidden ${CARD_CLASSES}`}>
-                  {paginatedCacheHitRates.items.map((item) => (
-                    <div key={item.key} className="border-t border-border/60 px-3.5 py-3 first:border-t-0">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
-                          <ProviderLogo id={item.model ? modelLogoId(item.model) : item.agentId} name={item.model ? undefined : item.agentName} size="sm" />
-                          <span className="truncate">{item.model ?? item.agentName}</span>
-                        </span>
-                        <CacheRateValue item={item} />
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {item.model && <RowBadge><ProviderLogo id={item.agentId} name={item.agentName} size="sm" />{item.agentName}</RowBadge>}
-                        <RowBadge><span className="tabular-nums text-foreground/80">{compact(item.cachedInputTokens)}</span> cached</RowBadge>
-                        <RowBadge><span className="tabular-nums text-foreground/80">{compact(item.totalInputTokens)}</span> input</RowBadge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={`mt-3 overflow-x-auto ${CARD_CLASSES}`}>
-                  <table className="w-full border-collapse text-sm" style={{ minWidth: cacheHitRateMode === "model" ? 680 : 560 }}>
-                    <thead>
-                      <tr className="border-b border-border bg-muted/20 text-xs text-muted-foreground">
-                        <th className="px-4 py-2.5 text-left font-medium">{cacheHitRateMode === "model" ? "Model" : "Agent"}</th>
-                        {cacheHitRateMode === "model" && <th className="px-4 py-2.5 text-left font-medium">Agent</th>}
-                        <th className="px-4 py-2.5 text-right font-medium">Hit rate</th>
-                        <th className="px-4 py-2.5 text-right font-medium">Cached input</th>
-                        <th className="px-4 py-2.5 text-right font-medium">Input tokens</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedCacheHitRates.items.map((item) => (
-                        <tr key={item.key} className="border-b border-border/60 transition-colors duration-150 hover:bg-muted/20 last:border-0">
-                          <td className="px-4 py-3 font-medium">
-                            <span className="inline-flex min-w-0 items-center gap-2">
-                              <ProviderLogo id={item.model ? modelLogoId(item.model) : item.agentId} name={item.model ? undefined : item.agentName} size="sm" />
-                              <span className="truncate">{item.model ?? item.agentName}</span>
-                            </span>
-                          </td>
-                          {cacheHitRateMode === "model" && <td className="px-4 py-3"><AgentCell agentId={item.agentId} agent={item.agentName} mode="tokens" /></td>}
-                          <td className="px-4 py-3 text-right"><CacheRateValue item={item} /></td>
-                          <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{compact(item.cachedInputTokens)}</td>
-                          <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{compact(item.totalInputTokens)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {cacheHitRates.length > BREAKDOWN_PAGE_SIZE && (
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs tabular-nums text-muted-foreground sm:justify-end">
-                  <span>{paginatedCacheHitRates.rangeStart}–{paginatedCacheHitRates.rangeEnd} of {paginatedCacheHitRates.totalItems}</span>
-                  <button type="button" aria-label="Previous cache hit rate page" title="Previous page" disabled={!paginatedCacheHitRates.canPrevious} onClick={() => setCacheHitRatePage(paginatedCacheHitRates.page - 1)} className="inline-flex size-7 items-center justify-center rounded-md border border-border/70 transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/50 hover:text-foreground active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40">
-                    <Icon name="ChevronLeft" className="size-3.5" aria-hidden="true" />
-                  </button>
-                  <button type="button" aria-label="Next cache hit rate page" title="Next page" disabled={!paginatedCacheHitRates.canNext} onClick={() => setCacheHitRatePage(paginatedCacheHitRates.page + 1)} className="inline-flex size-7 items-center justify-center rounded-md border border-border/70 transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/50 hover:text-foreground active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40">
-                    <Icon name="ChevronRight" className="size-3.5" aria-hidden="true" />
-                  </button>
-                </div>
-              )}
-            </section>
             </>
             )}
 
@@ -1613,10 +1543,15 @@ function UsageDashboard() {
                           )}
                           <span className="truncate">{row.label}</span>
                         </span>
-                        <span className="shrink-0 text-sm font-medium tabular-nums">
-                          {metricMode === "cost"
-                            ? <PricedCost cost={row.cost} unknown={row.unknown} />
-                            : <>{compact(row.tokens)}<span className="font-normal text-muted-foreground"> tokens</span></>}
+                        <span className="flex shrink-0 flex-col items-end text-sm font-medium tabular-nums">
+                          <span>
+                            {metricMode === "cost"
+                              ? <PricedCost cost={row.cost} unknown={row.unknown} />
+                              : <>{compact(row.tokens)}<span className="font-normal text-muted-foreground"> tokens</span></>}
+                          </span>
+                          {breakdownMode === "model" && row.cacheRate && (
+                            <span className="mt-0.5 text-[11px] font-normal text-muted-foreground"><CacheRateValue item={row.cacheRate} /> cache hit</span>
+                          )}
                         </span>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
@@ -1669,7 +1604,7 @@ function UsageDashboard() {
                     />
                   </div>
                   <div className="min-w-0 flex-1 overflow-x-auto">
-                  <table className="w-full border-collapse text-sm" style={{ minWidth: breakdownMode === "day" ? 520 : 640 }}>
+                  <table className="w-full border-collapse text-sm" style={{ minWidth: breakdownMode === "day" ? 520 : breakdownMode === "model" ? 720 : 640 }}>
                     <thead>
                       <tr className="border-b border-border bg-muted/20 text-xs text-muted-foreground">
                         <th className="px-4 py-2.5 text-left font-medium">
@@ -1677,6 +1612,9 @@ function UsageDashboard() {
                         </th>
                         {breakdownMode !== "day" && (
                           <th className="px-4 py-2.5 text-left font-medium">Agent</th>
+                        )}
+                        {breakdownMode === "model" && (
+                          <th className="px-4 py-2.5 text-right font-medium">Cache hit</th>
                         )}
                         <th className="px-4 py-2.5 text-right font-medium">{metricMode === "cost" ? "Cost" : "Tokens"}</th>
                         <th className="px-4 py-2.5 text-right font-medium">Share</th>
@@ -1702,6 +1640,9 @@ function UsageDashboard() {
                             <td className="px-4 py-3">
                               <AgentCell agentId={row.agentId} agent={row.agent} others={row.otherAgents} mode={metricMode} />
                             </td>
+                          )}
+                          {breakdownMode === "model" && (
+                            <td className="px-4 py-3 text-right">{row.cacheRate && <CacheRateValue item={row.cacheRate} />}</td>
                           )}
                           <td className="px-4 py-3 text-right tabular-nums">
                             {metricMode === "cost" ? <PricedCost cost={row.cost} unknown={row.unknown} /> : compact(row.tokens)}
