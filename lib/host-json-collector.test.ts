@@ -26,7 +26,7 @@ async function temporaryDirectory() {
   return directory;
 }
 
-async function scan(agentId: HostJsonAgentId, root: string | string[], cachePath: string, extra?: Partial<HostJsonScanInput>) {
+async function scan(agentId: HostJsonAgentId, root: string | string[], cachePath: string, extra?: Partial<HostJsonScanInput>, codexHome = "") {
   const script = compressedHostJsonCollectorScript({
     agentId,
     roots: Array.isArray(root) ? root : [root],
@@ -35,7 +35,7 @@ async function scan(agentId: HostJsonAgentId, root: string | string[], cachePath
     ...extra,
   });
   expect(script.length).toBeLessThan(9_000);
-  const { stdout } = await execFileAsync(process.execPath, ["-e", script], { maxBuffer: 2 * 1024 * 1024 });
+  const { stdout } = await execFileAsync(process.execPath, ["-e", script], { maxBuffer: 2 * 1024 * 1024, env: { ...process.env, CODEX_HOME: codexHome } });
   return extractHostJsonScan(stdout.replace(/\n/g, "\r\n"));
 }
 
@@ -44,6 +44,46 @@ afterEach(async () => {
 });
 
 describe("host JSON usage collector", () => {
+  it("collects a named Codex home outside the conventional profiles directory", async () => {
+    const directory = await temporaryDirectory();
+    const home = join(directory, "custom account");
+    await mkdir(join(home, "sessions"), { recursive: true });
+    await writeFile(join(home, "sessions", "rollout-custom.jsonl"), [
+      { type: "turn_context", payload: { model: "gpt-5.6-sol" } },
+      { timestamp: "2026-08-09T12:00:01Z", type: "event_msg", payload: { type: "token_count", info: { last_token_usage: { input_tokens: 100, cached_input_tokens: 60, output_tokens: 20 } } } },
+    ].map((value) => JSON.stringify(value)).join("\n"));
+    const result = await scan("codex", join(directory, "default", "sessions"), join(directory, "cache.json"), {
+      accountHomes: [{ name: "work", path: home }],
+    });
+    expect(result.rows).toEqual([expect.objectContaining({ account: "work", uncachedInputTokens: 40, cachedInputTokens: 60, outputTokens: 20 })]);
+    const cachePath = join(directory, "cache.json");
+    const second = await scan("codex", [], cachePath, { accountHomes: [{ name: "renamed", path: home }] });
+    expect(second.rows).toEqual([expect.objectContaining({ account: "renamed", outputTokens: 20 })]);
+    expect(second.changedFileCount).toBe(1);
+    const third = await scan("codex", [], cachePath, { accountHomes: [{ name: "renamed", path: home }] });
+    expect(third.reusedFileCount).toBe(1);
+    expect(third.rows).toEqual(second.rows);
+
+    const alias = join(directory, "alias");
+    await symlink(home, alias);
+    const duplicate = await scan("codex", [], cachePath, {
+      accountHomes: [{ name: "first", path: home }, { name: "second", path: alias }], discoverCodexHome: true,
+    }, home);
+    expect(duplicate.fileCount).toBe(1);
+    expect(duplicate.rows).toEqual([expect.objectContaining({ account: "first", outputTokens: 20 })]);
+
+    const envOnly = await scan("codex", [], cachePath, { discoverCodexHome: true }, home);
+    expect(envOnly.rows).toEqual([expect.objectContaining({ account: "environment", outputTokens: 20 })]);
+    const primary = await scan("codex", join(home, "sessions"), cachePath, {
+      accountHomes: [{ name: "work", path: home }], discoverCodexHome: true,
+    }, home);
+    expect(primary.fileCount).toBe(1);
+    expect(primary.rows[0]?.account).toBeUndefined();
+    await expect(scan("codex", [], cachePath, {
+      accountHomes: [{ name: "work", path: home }, { name: "work", path: join(directory, "different") }],
+    })).rejects.toThrow("Codex home names conflict");
+  });
+
   it("streams Codex logs and reuses metadata-only per-file aggregates", async () => {
     const directory = await temporaryDirectory();
     const root = join(directory, "sessions");
@@ -429,7 +469,7 @@ describe("host JSON usage collector", () => {
     const result = await scan("codex", root, cachePath);
     expect(result.reusedFileCount).toBe(0);
     expect(result.rows.map((row) => row.day)).not.toContain("1999-01-01");
-    expect(JSON.parse(await readFile(cachePath, "utf8")).version).toBe(5);
+    expect(JSON.parse(await readFile(cachePath, "utf8")).version).toBe(6);
   });
 
   it("decodes concatenated dsh session frames and aggregates settlement usage", async () => {

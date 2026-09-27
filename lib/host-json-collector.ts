@@ -19,6 +19,8 @@ export type HostJsonScanInput = {
   // (e.g. ~/.codex-profiles/<name> for extra Codex accounts). Each
   // <name>/sessions tree is scanned and its rows carry `account: <name>`.
   accountRoot?: string;
+  accountHomes?: Array<{ name: string; path: string }>;
+  discoverCodexHome?: boolean;
 };
 
 export type HostJsonScanResult = {
@@ -76,7 +78,8 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // version MUST rise or upgraded hosts keep serving UTC buckets forever,
   // silently mixed with newly parsed local ones.
   // v5: keep recorded and unpriced Pi/Prime usage in separate buckets.
-  const cacheVersion = 5;
+  // v6: include account attribution in cache signatures when roots are renamed.
+  const cacheVersion = 6;
   const scanBegin = "__BB_USAGE_SCAN_BEGIN__";
   const scanEnd = "__BB_USAGE_SCAN_END__";
   const input = JSON.parse(buffer.from(encodedInput, "base64").toString("utf8")) as HostJsonScanInput;
@@ -577,6 +580,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   const discovered: string[] = [];
   for (const root of [...new Set(input.roots)]) await walk(root, discovered);
   const accountDiscovered: string[] = [];
+  const accountHomes = input.agentId === "codex" ? [...(input.accountHomes ?? [])] : [];
   if (accountRoot) {
     let accountEntries: import("node:fs").Dirent[] = [];
     try {
@@ -587,21 +591,43 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
         failures.push("A usage directory could not be read.");
       }
     }
-    for (const entry of accountEntries) {
+    for (const entry of accountEntries.sort((a, b) => a.name.localeCompare(b.name))) {
       // Dirent type bits describe the link itself, so a symlinked profile home
       // is followed here; the inode dedup below keeps an account aliased to the
       // primary home from being counted twice.
       if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
-      const files: string[] = [];
-      await walk(path.join(accountRoot, entry.name, "sessions"), files);
-      for (const filePath of files) accountByPath.set(filePath, entry.name);
-      accountDiscovered.push(...files);
+      accountHomes.push({ name: entry.name, path: path.join(accountRoot, entry.name) });
     }
+  }
+  if (input.agentId === "codex" && input.discoverCodexHome && process.env.CODEX_HOME) {
+    if (path.isAbsolute(process.env.CODEX_HOME)) {
+      accountHomes.push({ name: "environment", path: process.env.CODEX_HOME });
+    } else {
+      discoveryFailed = true;
+      failures.push("The collector host's CODEX_HOME must be an absolute path.");
+    }
+  }
+  const pathsByAccount = new Map<string, string>();
+  for (const account of accountHomes) {
+    const canonicalPath = await fs.promises.realpath(account.path).catch(() => path.resolve(account.path));
+    const previousPath = pathsByAccount.get(account.name);
+    if (previousPath && previousPath !== canonicalPath) {
+      throw new Error("Codex home names conflict with another configured or discovered home. Choose a distinct account name.");
+    }
+    pathsByAccount.set(account.name, canonicalPath);
+    const files: string[] = [];
+    await walk(path.join(account.path, "sessions"), files);
+    for (const filePath of files) {
+      // Explicit homes precede discovered profiles and environment defaults.
+      if (!accountByPath.has(filePath)) accountByPath.set(filePath, account.name);
+    }
+    accountDiscovered.push(...files);
   }
   // Primary roots come first so the inode dedup attributes an aliased file to
   // the primary home rather than to whichever account path happens to sort
   // earlier.
-  const uniquePaths = [...new Set(discovered)].sort().concat([...new Set(accountDiscovered)].sort());
+  const uniquePaths = [...new Set(discovered)].sort().concat([...new Set(accountDiscovered)]);
+  for (const filePath of discovered) accountByPath.delete(filePath);
   const nextFiles: Record<string, CacheEntry> = {};
   const allRows = new Map<string, HostUsageAggregate>();
   const allEvents = new Map<string, CachedUsageRow>();
@@ -620,7 +646,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
       if (seenFiles.has(fileIdentity)) continue;
       seenFiles.add(fileIdentity);
       fileCount += 1;
-      const signature = `${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+      const signature = `${stat.size}:${Math.trunc(stat.mtimeMs)}:${JSON.stringify(accountByPath.get(filePath) ?? null)}`;
       if (prior?.signature === signature && Array.isArray(prior.rows) && prior.rows.every(validRow)) {
         nextFiles[sourceId] = prior;
         for (const row of prior.rows) row.eventKey ? mergeEvent(allEvents, row) : add(allRows, row);

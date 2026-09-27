@@ -8,6 +8,7 @@ import {
   type AgentId, type UsageRecord,
 } from "./collectors";
 import { activateCachedCatalog, refreshCatalog } from "./lib/catalog";
+import { configuredCodexHomes } from "./lib/codex-homes";
 import { openCodeGoUsageCommand, extractOpenCodeGoFingerprint, parseOpenCodeGoUsage } from "./lib/opencode-go";
 import {
   compressedHostJsonCollectorScript,
@@ -70,7 +71,7 @@ export const rpcContract = defineRpcContract({
 
 type Database = ReturnType<BbPluginApi["storage"]["database"]>;
 type Machine = { id: string; name: string };
-type CollectorSettings = { piSessionRoots: string; primeSessionRoots: string };
+type CollectorSettings = { piSessionRoots: string; primeSessionRoots: string; codexHomes?: string };
 
 const AGENTS = [
   { id: "codex", name: "Codex" },
@@ -451,10 +452,9 @@ async function syncJsonAgent(
       roots,
       cachePath,
       sinceDay: historyStartDay(),
-      // Extra Codex accounts (BB account-limits ACP providers) keep their
-      // CODEX_HOME under ~/.codex-profiles/<name>; the scan tags their rows
-      // with the profile name so each account stays a distinct agent.
       accountRoot: agentId === "codex" ? `${home}/.codex-profiles` : undefined,
+      accountHomes: agentId === "codex" ? configuredCodexHomes(settings.codexHomes ?? "", home, machine.id) : undefined,
+      discoverCodexHome: agentId === "codex",
     }), signal, {
       title: `Usage: ${agentId} scan`,
       timeoutMs: JSON_AGENT_SYNC_TIMEOUT_MS,
@@ -917,6 +917,12 @@ function abortableDelay(ms: number, signal: AbortSignal) {
 
 export default async function plugin(bb: BbPluginApi) {
   const settings = bb.settings.define({
+    codexHomes: {
+      type: "string",
+      label: "Additional Codex homes",
+      description: 'JSON array of {"name":"work","path":"~/.custom-codex","hostId":"optional-host-id"}. Paths point to Codex homes, not sessions directories. Names identify accounts in the dashboard. Defaults and the collector host’s CODEX_HOME are also scanned.',
+      default: "[]",
+    },
     piSessionRoots: {
       type: "string",
       label: "Extra Pi session roots",

@@ -1,8 +1,7 @@
 import { normalizeProviderId, resolvePricing, type PricingStatus } from "./lib/pricing";
 
-// `codex-<name>` ids are emitted for extra Codex accounts whose CODEX_HOME
-// lives under ~/.codex-profiles/<name>, so each account stays a distinct agent
-// in grouping and filters instead of merging into "codex".
+// Named homes stay distinct in grouping and filters regardless of where the
+// host stores them; the primary home retains the historical "codex" identity.
 export type AgentId = "codex" | "claude" | "devin" | "dsh" | "fx" | "grok" | "opencode" | "pi" | "prime" | "antigravity" | "thaura" | `codex-${string}`;
 
 export type UsageRecord = {
@@ -336,9 +335,8 @@ export function parseHostUsageAggregates(content: string, agentId: Exclude<Agent
     const modelProviderId = normalizeProviderId(text(row.modelProviderId, "unknown"));
     const model = text(row.model, "unknown");
     const project = text(row.project, "Unknown");
-    // Only the codex scan emits `account` today; it marks rows from
-    // ~/.codex-profiles/<name> so each extra account lands on its own
-    // dashboard agent instead of merging into Codex.
+    // Only Codex emits account attribution; named homes share its parser while
+    // remaining distinct dashboard agents.
     const account = agentId === "codex" ? text(row.account, "").slice(0, 80) : "";
     const scopedAgentId: AgentId = account ? `codex-${account}` : agentId;
     const scopedAgentName = account ? `Codex (${account})` : agentName;

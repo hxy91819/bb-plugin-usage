@@ -19,7 +19,7 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 
 ## Supported data sources
 
-- Codex: `~/.codex/sessions/**/rollout-*.jsonl`, plus `~/.codex-profiles/*/sessions/**/rollout-*.jsonl` for extra Codex accounts exposed as ACP providers (e.g. by multi-account bridges); each profile reports as its own agent, `Codex (<name>)`
+- Codex: `~/.codex/sessions/**/rollout-*.jsonl`, plus `~/.codex-profiles/*/sessions/**/rollout-*.jsonl`, the collector host's `CODEX_HOME/sessions`, and configured additional Codex homes. Each additional home reports as its own agent, `Codex (<name>)`.
 - Claude Code: `~/.claude/projects/**/*.jsonl`
 - Devin: `~/.local/share/devin/cli/sessions.db` — the Devin CLI's SQLite session store, opened read-only (`$XDG_DATA_HOME` is honored). Devin runs in BB through the `acp-devin` provider and writes no JSONL session logs.
 - DeepSeek Harness: `~/.dsh/sessions/*/*/session.v3.jsonl.zstd` (Zstandard-compressed JSONL; requires Node.js 22.15+ on the machine)
@@ -51,6 +51,23 @@ Missing log roots are treated as normal “no data” results. Offline machines,
 ![Usage by provider](https://5kas5z928t.ufs.sh/f/wBHVA4PQTleAX0mk1Ywqs8NZT3UMHvygFezBaGYxK2w6S1In)
 
 ![Usage details](https://5kas5z928t.ufs.sh/f/wBHVA4PQTleAKF31TmIL2VE9DjCy53AWlsMSoTNfqhc0U8Jb)
+
+## Custom Codex homes and ACP coverage
+
+In Usage settings, **Additional Codex homes** accepts a JSON array:
+
+```json
+[
+  { "name": "work", "path": "~/.work-codex" },
+  { "name": "lab", "path": "/srv/codex-account", "hostId": "your-host-id" }
+]
+```
+
+Paths point to the home containing `sessions`, not to the session directory itself. `~/` expands to each enrolled host's user home. Omit `hostId` to apply an entry to all hosts; supply a host ID from `bb machine list --json` for a machine-specific path. Names must be unique per host, at most 80 characters, and contain letters, numbers, dots, underscores or hyphens (starting with a letter or number). Full paths stay out of usage records and scan diagnostics.
+
+The default home and conventional profiles remain enabled. An absolute `CODEX_HOME` in the **collector process on the enrolled host** is also scanned, labeled `Codex (environment)` unless the same files were already collected from a default or named home. Variables set only inside a provider's launcher/wrapper are not visible to that collector: configure those homes explicitly. The plugin does not execute arbitrary wrappers to infer their environment. When roots overlap, explicit entries take precedence over discovered profiles and environment homes; the default home keeps primary attribution. A name shared by different configured or discovered homes is rejected to avoid merging unrelated accounts. Symlink/hard-link aliases are counted once, and renaming an entry refreshes cached attribution.
+
+ACP availability alone does not imply token accounting. This plugin currently collects the supported data sources listed above, not arbitrary ACP conversation events. A provider must expose actual input/output/cache token counts to support consumption statistics. Context occupancy, credits, and subscription percentages are not substitutes. In particular, the Antigravity collector requires the documented bridge ledger; other `agy` bridges may not write it. Kiro token collection is not currently supported. Missing usage cannot be reconstructed from message length or context percentages.
 
 ## Install
 
