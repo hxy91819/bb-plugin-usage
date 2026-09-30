@@ -24,7 +24,7 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/additional-agent-usage | 4841976 | 2945262 | [#69](https://github.com/MayankBansal12/bb-plugin-usage/issues/69), [#75](https://github.com/MayankBansal12/bb-plugin-usage/pull/75) |
 | feature/codex-profile-sessions | 0a9b58d | 961a8d7 | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44), [#81](https://github.com/MayankBansal12/bb-plugin-usage/pull/81) |
 | fix/codebuddy-dsh-pricing | af5bbff | 2aea58f | [#70](https://github.com/MayankBansal12/bb-plugin-usage/issues/70), [#79](https://github.com/MayankBansal12/bb-plugin-usage/pull/79) |
-| fix/stacked-chart-boundaries | 500d6fd | d49a0b5 | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71), [#77](https://github.com/MayankBansal12/bb-plugin-usage/pull/77) |
+| fix/stacked-chart-boundaries | 409a842 | 18196cd | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71), [#77](https://github.com/MayankBansal12/bb-plugin-usage/pull/77) |
 | feature/copilot-session-usage | 5a31cde | bb27fbd | [#72](https://github.com/MayankBansal12/bb-plugin-usage/issues/72), [#78](https://github.com/MayankBansal12/bb-plugin-usage/pull/78) |
 | feature/breakdown-share-donut | 654df6b | bce5839 | [#73](https://github.com/MayankBansal12/bb-plugin-usage/issues/73), [#76](https://github.com/MayankBansal12/bb-plugin-usage/pull/76) |
 | feature/amp-provider-usage | 481729f | d9b862d | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74), [#80](https://github.com/MayankBansal12/bb-plugin-usage/pull/80) |
