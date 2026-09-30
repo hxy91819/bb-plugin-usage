@@ -22,7 +22,7 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | Branch | Source commit | Aggregate commit | Upstream feedback |
 |---|---|---|---|
 | feature/additional-agent-usage | 627a416 | 958ec39, 74d4e18 | Not submitted |
-| feature/codex-profile-sessions | a74efaf | b0cabfc, 37345b1, d5ebfe0 | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44) |
+| feature/codex-profile-sessions | 0c192c0 | b0cabfc, 37345b1, d5ebfe0, fffb0c8 | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44) |
 | fix/codebuddy-dsh-pricing | 6b3c08c | 720057e, c0934a3, 7ecc0e9 | Not submitted |
 | fix/stacked-chart-boundaries | b71c7f5 | a0e8e15 | Not submitted |
 | feature/copilot-session-usage | 13f5529 | 781821c, 6c74253, 6d6a3cb, b123d32 | Not submitted |

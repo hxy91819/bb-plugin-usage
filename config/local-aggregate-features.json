@@ -18,8 +18,8 @@
     {
       "branch": "feature/codex-profile-sessions",
       "lastPackaged": {
-        "sourceCommit": "a74efaff7dac25f3992393dbbe6cbc69110309cc",
-        "aggregateCommit": "d5ebfe080ece62c280c2bddc7e3abf1e79510ffc"
+        "sourceCommit": "0c192c05e8320a05b8c846ebfcc2cbf8dfac7a59",
+        "aggregateCommit": "fffb0c8854755825cd2cac4598d8d5e8749ea41a"
       },
       "upstreamIssues": [
         {
