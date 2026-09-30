@@ -81,7 +81,8 @@
           "number": 77,
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/77"
         }
-      ]
+      ],
+      "note": "Superseded by feature/daily-stacked-bars: the smoothed area chart it styled was replaced by per-day stacked bars."
     },
     {
       "branch": "feature/copilot-session-usage",
@@ -137,6 +138,25 @@
           "repository": "MayankBansal12/bb-plugin-usage",
           "number": 80,
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/80"
+        }
+      ]
+    },
+    {
+      "branch": "feature/daily-stacked-bars",
+      "lastPackaged": {
+        "sourceCommit": "d0d7fb4e691f3c54ff11dee78f5ee2b28d69dab8",
+        "aggregateCommit": "e6219e1685647402eb1745e7af9140b07985a2fd"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 82,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/82"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 83,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/83"
         }
       ]
     }
