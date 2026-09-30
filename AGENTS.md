@@ -21,11 +21,11 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 
 | Branch | Source commit | Aggregate commit | Upstream feedback |
 |---|---|---|---|
-| feature/additional-agent-usage | 627a416 | 958ec39, 74d4e18 | Not submitted |
+| feature/additional-agent-usage | 627a416 | 958ec39, 74d4e18 | [#69](https://github.com/MayankBansal12/bb-plugin-usage/issues/69), [#75](https://github.com/MayankBansal12/bb-plugin-usage/pull/75) |
 | feature/codex-profile-sessions | 0c192c0 | b0cabfc, 37345b1, d5ebfe0, fffb0c8 | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44) |
-| fix/codebuddy-dsh-pricing | 6b3c08c | 720057e, c0934a3, 7ecc0e9 | Not submitted |
-| fix/stacked-chart-boundaries | b71c7f5 | a0e8e15 | Not submitted |
-| feature/copilot-session-usage | 13f5529 | 781821c, 6c74253, 6d6a3cb, b123d32 | Not submitted |
-| feature/breakdown-share-donut | 98b9742 | 1f9a808, 75e142d, 584dcb4 | Not submitted |
-| feature/amp-provider-usage | ac5c484 | 2b6bba4, f9c858f, c62357d, 6f4c026, 3005b5d, 451ccc3, 8ca1b96, b240fe9, bacc24f, 65fb128 | Not submitted |
+| fix/codebuddy-dsh-pricing | 6b3c08c | 720057e, c0934a3, 7ecc0e9 | [#70](https://github.com/MayankBansal12/bb-plugin-usage/issues/70) |
+| fix/stacked-chart-boundaries | b71c7f5 | a0e8e15 | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71) |
+| feature/copilot-session-usage | 13f5529 | 781821c, 6c74253, 6d6a3cb, b123d32 | [#72](https://github.com/MayankBansal12/bb-plugin-usage/issues/72) |
+| feature/breakdown-share-donut | 98b9742 | 1f9a808, 75e142d, 584dcb4 | [#73](https://github.com/MayankBansal12/bb-plugin-usage/issues/73), [#76](https://github.com/MayankBansal12/bb-plugin-usage/pull/76) |
+| feature/amp-provider-usage | ac5c484 | 2b6bba4, f9c858f, c62357d, 6f4c026, 3005b5d, 451ccc3, 8ca1b96, b240fe9, bacc24f, 65fb128 | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74) |
 <!-- open-source-fork-maintenance:end -->
