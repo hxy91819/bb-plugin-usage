@@ -479,7 +479,9 @@ const codexBucketRowColumns = `e.event_key eventKey, e.processed_tokens processe
 // how a rescan would merge the same content. `drop` removes a row entirely:
 // an untagged bucket that several tagged siblings now split is unassignable
 // and already covered by the fresh scan, so keeping it would double count.
-function applyCodexKeyRewrites(db: Database, rewrites: Array<{ key: string; nextKey?: string; to?: string; row: CodexBucketRow; drop?: boolean }>) {
+// Merged buckets are repriced afterwards: the folded column maxima can total
+// more than either input row, so keeping a merged cost would understate it.
+function applyCodexKeyRewrites(db: Database, sourceId: string, rewrites: Array<{ key: string; nextKey?: string; to?: string; row: CodexBucketRow; drop?: boolean }>) {
   if (rewrites.length === 0) return;
   const targetRow = db.prepare(`SELECT event_key eventKey, processed_tokens processedTokens,
     cached_input_tokens cachedInputTokens, cache_write_tokens cacheWriteTokens,
@@ -488,14 +490,29 @@ function applyCodexKeyRewrites(db: Database, rewrites: Array<{ key: string; next
     FROM usage_events WHERE event_key=?`);
   const mergeInto = db.prepare(`UPDATE usage_events SET
       processed_tokens=?, cached_input_tokens=?, cache_write_tokens=?, uncached_input_tokens=?,
-      output_tokens=?, cost_usd=?, cache_savings_usd=?, logged_cost_usd=?
+      output_tokens=?, logged_cost_usd=?
     WHERE event_key=?`);
   const relabel = db.prepare("UPDATE usage_events SET event_key=?, provider_id=?, provider_name=? WHERE event_key=?");
   const carryMappings = db.prepare("INSERT OR IGNORE INTO usage_event_sources (event_key, source_id) SELECT ?, source_id FROM usage_event_sources WHERE event_key=?");
   const dropMappings = db.prepare("DELETE FROM usage_event_sources WHERE event_key=?");
   const dropEvent = db.prepare("DELETE FROM usage_events WHERE event_key=?");
+  // Same record shape upsertSourceEvents uses to reprice retained rows.
+  const recordFor = db.prepare(`SELECT e.event_key eventKey, e.timestamp, e.day,
+    e.provider_id agentId, e.provider_name agentName, e.model_provider_id modelProviderId,
+    e.model_provider_name modelProviderName, s.machine_id machineId, s.machine_name machineName,
+    e.model, e.project, e.cost_usd costUsd, e.logged_cost_usd loggedCostUsd,
+    e.pricing_status pricingStatus, e.cache_savings_usd cacheSavingsUsd,
+    e.processed_tokens processedTokens, e.cached_input_tokens cachedInputTokens,
+    e.cache_write_tokens cacheWriteTokens, e.uncached_input_tokens uncachedInputTokens,
+    e.output_tokens outputTokens FROM usage_events e
+    JOIN usage_event_sources es ON es.event_key=e.event_key
+    JOIN usage_sources s ON s.source_id=es.source_id
+    WHERE e.event_key=? AND es.source_id=?`);
+  const updatePrice = db.prepare(`UPDATE usage_events SET cost_usd=?, cache_savings_usd=?,
+    pricing_status=? WHERE event_key=?`);
 
   db.transaction(() => {
+    const mergedKeys: string[] = [];
     for (const { key, nextKey, to, row, drop } of rewrites) {
       if (drop) {
         dropMappings.run(key);
@@ -513,14 +530,20 @@ function applyCodexKeyRewrites(db: Database, rewrites: Array<{ key: string; next
         const logged = row.loggedCostUsd === null ? target.loggedCostUsd
           : target.loggedCostUsd === null ? row.loggedCostUsd
             : Math.max(target.loggedCostUsd, row.loggedCostUsd);
-        mergeInto.run(cached + writes + uncached + output, cached, writes, uncached, output,
-          Math.max(target.costUsd, row.costUsd), Math.max(target.cacheSavingsUsd, row.cacheSavingsUsd), logged, nextKey!);
+        mergeInto.run(cached + writes + uncached + output, cached, writes, uncached, output, logged, nextKey!);
+        mergedKeys.push(nextKey!);
       } else {
         relabel.run(nextKey!, to!, to === "codex" ? "Codex" : `Codex (${to!.slice(6)})`, key);
       }
       carryMappings.run(nextKey!, key);
       dropMappings.run(key);
       dropEvent.run(key);
+    }
+    for (const key of mergedKeys) {
+      const record = recordFor.get(key, sourceId) as UsageRecord | undefined;
+      if (record === undefined) continue;
+      const priced = repriceUsageRecord(record);
+      updatePrice.run(priced.costUsd, priced.cacheSavingsUsd, priced.pricingStatus, key);
     }
   })();
 }
@@ -562,7 +585,7 @@ function relabelRenamedCodexAccounts(db: Database, sourceId: string, attribution
         staged.push({ stagedKey, nextKey: `${to}:${row.eventKey.slice(prefix.length)}`, to, row });
       }
     }
-    applyCodexKeyRewrites(db, staged.map(({ stagedKey, nextKey, to, row }) => ({ key: stagedKey, nextKey, to, row })));
+    applyCodexKeyRewrites(db, sourceId, staged.map(({ stagedKey, nextKey, to, row }) => ({ key: stagedKey, nextKey, to, row })));
   })();
 }
 
@@ -607,7 +630,7 @@ function normalizeCodexHomeKeys(db: Database, sourceId: string, attribution: Map
       rewrites.push({ key: row.eventKey, row, drop: true });
     }
   }
-  applyCodexKeyRewrites(db, rewrites);
+  applyCodexKeyRewrites(db, sourceId, rewrites);
 }
 
 // Builds before source attribution put the whole Codex scan on a

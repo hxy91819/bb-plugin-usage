@@ -1976,6 +1976,8 @@ describe("retained usage through the real sync path", () => {
       // processed_tokens is deliberately inconsistent with the columns, as a
       // row written by an older build could be; folding must recompute it
       // from the merged components rather than taking MAX(processed_tokens).
+      // The merged bucket is also repriced on the folded totals: keeping the
+      // larger input cost (1.8) would understate the merged usage.
       const sourceId = db.prepare("SELECT source_id id FROM usage_sources WHERE provider_id='codex'").get() as { id: string };
       db.prepare(`INSERT INTO usage_events (event_key, timestamp, day, provider_id, provider_name, model,
           cost_usd, cache_savings_usd, processed_tokens, cached_input_tokens, cache_write_tokens,
@@ -1988,8 +1990,8 @@ describe("retained usage through the real sync path", () => {
         VALUES ('codex:host-1:${DAY}:openai:gpt-test:proj', ?)`).run(sourceId.id);
 
       await syncAgain();
-      expect(db.prepare("SELECT processed_tokens total, uncached_input_tokens in_, output_tokens out_ FROM usage_events").get())
-        .toEqual({ total: 1700, in_: 1000, out_: 700 });
+      expect(db.prepare("SELECT processed_tokens total, uncached_input_tokens in_, output_tokens out_, cost_usd cost FROM usage_events").get())
+        .toEqual({ total: 1700, in_: 1000, out_: 700, cost: 1.7 });
     } finally { db.close(); }
   });
 
