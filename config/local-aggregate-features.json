@@ -29,8 +29,8 @@
     {
       "branch": "feature/codex-profile-sessions",
       "lastPackaged": {
-        "sourceCommit": "500f32a6cf683b05e70b018f652c1631e726e7d5",
-        "aggregateCommit": "cedb14b9d0cc3fb1bae33220f0c4aebe0855378b"
+        "sourceCommit": "0a9b58d56844edd941f0487bae01600c191fd697",
+        "aggregateCommit": "961a8d7a04278602c35f3bd38afd6a349c635447"
       },
       "upstreamIssues": [
         {
