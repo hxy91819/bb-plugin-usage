@@ -90,6 +90,8 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // v6 (copilot): add session summaries.
   // v7 (codex): retain an account-independent event identity so cached rows
   // can rebuild their dedup key when a configured account label changes.
+  // v7 (copilot): uncached input subtracts cache reads and writes; rows cached
+  // under v6 keep the double-counted values and must be reparsed.
   // All agents share this version so existing caches migrate consistently.
   const cacheVersion = 7;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "codebuddy", "copilot", "cursor", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
