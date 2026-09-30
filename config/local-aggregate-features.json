@@ -1,0 +1,144 @@
+{
+  "version": 2,
+  "aggregate": {
+    "branch": "local/aggregate",
+    "upstreamRef": "origin/main",
+    "lastIntegratedUpstreamCommit": "0bf1bab433ff0e8f0900f9c3bc6d11771e683bc5",
+    "stableTagPattern": null
+  },
+  "features": [
+    {
+      "branch": "feature/additional-agent-usage",
+      "lastPackaged": {
+        "sourceCommit": "48419766a681a0c3e5b45bcd8130bef501b11f86",
+        "aggregateCommit": "2945262a80a65a8bb6f6b3a90e357f936461667f"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 69,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/69"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 75,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/75"
+        }
+      ]
+    },
+    {
+      "branch": "feature/codex-profile-sessions",
+      "lastPackaged": {
+        "sourceCommit": "500f32a6cf683b05e70b018f652c1631e726e7d5",
+        "aggregateCommit": "cedb14b9d0cc3fb1bae33220f0c4aebe0855378b"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 44,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/44"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 81,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/81"
+        }
+      ]
+    },
+    {
+      "branch": "fix/codebuddy-dsh-pricing",
+      "lastPackaged": {
+        "sourceCommit": "af5bbff26088f0ae41e8697014328200a69919c0",
+        "aggregateCommit": "2aea58ff2f855f87bca28214cec66d7198f7bfbf"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 70,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/70"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 79,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/79"
+        }
+      ]
+    },
+    {
+      "branch": "fix/stacked-chart-boundaries",
+      "lastPackaged": {
+        "sourceCommit": "500d6fdae1d1115289d818860e3d55316a456d55",
+        "aggregateCommit": "d49a0b51e233c7c5fafc513fe71158bab102e14f"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 71,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/71"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 77,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/77"
+        }
+      ]
+    },
+    {
+      "branch": "feature/copilot-session-usage",
+      "lastPackaged": {
+        "sourceCommit": "5a31cdede7a1041bc0d35a65a9a3a77dfa11446e",
+        "aggregateCommit": "bb27fbdd3672984f333b652bc45d3af672083645"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 72,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/72"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 78,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/78"
+        }
+      ]
+    },
+    {
+      "branch": "feature/breakdown-share-donut",
+      "lastPackaged": {
+        "sourceCommit": "654df6bfabb4d123ab508bcf220b69fc44936eea",
+        "aggregateCommit": "bce583987d439a5f03f6c5efe03a89a2ffbc3c26"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 73,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/73"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 76,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/76"
+        }
+      ]
+    },
+    {
+      "branch": "feature/amp-provider-usage",
+      "lastPackaged": {
+        "sourceCommit": "481729fb1be9a1c7f01af104a20d42ee89db88c7",
+        "aggregateCommit": "d9b862d3383839e934676a9d66590fa3c8530313"
+      },
+      "upstreamIssues": [
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 74,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/issues/74"
+        },
+        {
+          "repository": "MayankBansal12/bb-plugin-usage",
+          "number": 80,
+          "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/80"
+        }
+      ]
+    }
+  ]
+}
