@@ -80,6 +80,9 @@ used when available, otherwise the SDK provider's. Matching Cursor accounts on
 different machines are still grouped into one card. Each machine's subscription
 query may take up to 20 seconds.
 
+For the aggregate fork with prebuilt release archives, see
+[fork installation and packaging](docs/fork-maintenance.md).
+
 Requires BB 0.36 or newer.
 
 ```sh
