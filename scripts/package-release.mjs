@@ -40,7 +40,7 @@ try {
   writeFileSync(join(root, "app.js"), 'import "./assets/app.css";\nexport { default } from "./assets/app.js";\n');
   writeFileSync(join(root, "package.json"), JSON.stringify({
     name: manifest.name, version: manifest.version, type: "module",
-    engines: { bb: ">=0.44.0", bbPluginSdk: `^${serverMeta.sdkVersion}` },
+    engines: manifest.engines,
     bb: { ...manifest.bb, server: "./server.js", app: "./app.js" },
   }, null, 2) + "\n");
   for (const file of ["LICENSE", "README.md"]) cpSync(file, join(root, file));
@@ -54,12 +54,12 @@ try {
     tag, sourceCommit: source, packageVersion: manifest.version,
     platform: "portable JavaScript (BB on Linux/macOS)", testedPlatform: "linux-x64",
     bbBuildVersion: serverMeta.builtWith.bbVersion, sdkVersion: serverMeta.sdkVersion,
-    minimumBbVersion: "0.44.0", archive, sha256: digest(join(out, archive)),
+    engines: manifest.engines, archive, sha256: digest(join(out, archive)),
     upstreamCommit: registry.aggregate.lastIntegratedUpstreamCommit,
     features: registry.features.map(({ branch, lastPackaged }) => ({ branch, ...lastPackaged })),
   };
   writeFileSync(join(out, "release.json"), JSON.stringify(metadata, null, 2) + "\n");
-  const notes = `# Usage fork ${tag}\n\nSource: \`${source}\`. Upstream package: ${manifest.version}.\n\nIncludes all ${metadata.features.length} registered aggregate branches. Requires BB 0.44.0 or newer with a compatible SDK (${metadata.sdkVersion}).\n\nDownload \`${archive}\`, \`release.json\`, \`RELEASE_NOTES.md\`, and \`SHA256SUMS\`; run \`sha256sum -c SHA256SUMS\`, extract to a permanent directory, and run \`bb plugin install path:/absolute/path/bb-plugin-usage --yes\`. See docs/fork-maintenance.md in the archive for installation and upgrades.\n\nContains compiled JavaScript and CSS; no npm install or manual source build is needed. BB may rewrap the JS during path installation. Linux x64 installation is verified in CI; macOS uses the same portable assets but is not smoke-tested. Host collector runtime requirements remain documented in README.md.\n`;
+  const notes = `# Usage fork ${tag}\n\nSource: \`${source}\`. Upstream package: ${manifest.version}.\n\nIncludes all ${metadata.features.length} registered aggregate branches. Compatibility requirements are inherited unchanged from source package.json: BB ${manifest.engines?.bb ?? "unspecified"}, SDK ${manifest.engines?.bbPluginSdk ?? "unspecified"}.\n\nDownload \`${archive}\`, \`release.json\`, \`RELEASE_NOTES.md\`, and \`SHA256SUMS\`; run \`sha256sum -c SHA256SUMS\`, extract to a permanent directory, and run \`bb plugin install path:/absolute/path/bb-plugin-usage --yes\`. See docs/fork-maintenance.md in the archive for installation and upgrades.\n\nContains compiled JavaScript and CSS; no npm install or manual source build is needed. BB may rewrap the JS during path installation. Linux x64 installation is verified in CI; macOS uses the same portable assets but is not smoke-tested. Host collector runtime requirements remain documented in README.md.\n`;
   writeFileSync(join(out, "RELEASE_NOTES.md"), notes);
   writeFileSync(join(out, "SHA256SUMS"), [archive, "release.json", "RELEASE_NOTES.md"].map((file) => `${digest(join(out, file))}  ${file}\n`).join(""));
   console.log(JSON.stringify(metadata, null, 2));
