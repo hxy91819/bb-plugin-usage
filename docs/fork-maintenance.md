@@ -21,10 +21,10 @@ to the fork. Choose the next unused `fork-v<package-version>-<UTC YYYYMMDD>.<n>`
 tag, starting at 1, then publish an annotated tag:
 
 ```sh
-git tag -a fork-v0.3.18-20261003.1 <verified-aggregate-sha> -m 'Usage aggregate release'
-git push fork refs/tags/fork-v0.3.18-20261003.1
+git tag -a fork-v0.3.18-20261003.2 <verified-aggregate-sha> -m 'Usage aggregate release'
+git push fork refs/tags/fork-v0.3.18-20261003.2
 gh run list --repo hxy91819/bb-plugin-usage --workflow fork-release.yml
-gh release view fork-v0.3.18-20261003.1 --repo hxy91819/bb-plugin-usage
+gh release view fork-v0.3.18-20261003.2 --repo hxy91819/bb-plugin-usage
 ```
 
 `.github/workflows/fork-release.yml` checks the tagged source, uses BB 0.44.0 to
@@ -48,13 +48,16 @@ of deleting or overwriting an existing release.
 
 ## Install in another environment
 
-Requires BB 0.44.0 or newer with the SDK range recorded in the archive's
-`package.json`, plus `curl`, `tar`, and `sha256sum` (use `shasum -a 256 -c` on
-macOS). The commands run on the machine hosting the BB server. Pick a permanent
+The archive preserves the source `package.json` engine requirements unchanged
+(currently BB `>=0.36` and `bbPluginSdk` `^0.4.1`). CI uses BB 0.44.0 for building
+and smoke testing; packaging does not add an installation version restriction.
+Other BB versions are not smoke-tested by this workflow. Installation needs
+`curl`, `tar`, and `sha256sum` (use `shasum -a 256 -c` on macOS). The commands run
+on the machine hosting the BB server. Pick a permanent
 versioned directory: BB keeps loading the plugin from that directory.
 
 ```sh
-tag=fork-v0.3.18-20261003.1
+tag=fork-v0.3.18-20261003.2
 install_dir="$HOME/.local/share/bb-plugins/usage/$tag"
 mkdir -p "$install_dir"
 cd "$install_dir"
