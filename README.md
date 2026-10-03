@@ -70,6 +70,10 @@ For relocated JSON/JSONL logs, **Extra usage log roots** (`extraUsageRoots`) acc
 
 ## Install
 
+For the aggregate fork with prebuilt release archives, see
+[fork installation and packaging](docs/fork-maintenance.md).
+
+
 Requires BB 0.36 or newer.
 
 ```sh
