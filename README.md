@@ -59,6 +59,10 @@ Missing log roots are treated as normal “no data” results. Offline machines,
 
 ## Install
 
+For the aggregate fork with prebuilt release archives, see
+[fork installation and packaging](docs/fork-maintenance.md).
+
+
 Requires BB 0.36 or newer.
 
 ```sh
