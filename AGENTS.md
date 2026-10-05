@@ -29,4 +29,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/breakdown-share-donut | 654df6b | bce5839 | [#73](https://github.com/MayankBansal12/bb-plugin-usage/issues/73), [#76](https://github.com/MayankBansal12/bb-plugin-usage/pull/76) |
 | feature/amp-provider-usage | 481729f | d9b862d | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74), [#80](https://github.com/MayankBansal12/bb-plugin-usage/pull/80) |
 | feature/daily-stacked-bars | d0d7fb4 | e6219e1 | [#82](https://github.com/MayankBansal12/bb-plugin-usage/issues/82), [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) |
+| fix/amp-initial-machine-latest | 4871fe0 | 7d8e571 | Not submitted |
 <!-- open-source-fork-maintenance:end -->

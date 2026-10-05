@@ -159,6 +159,14 @@
           "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/83"
         }
       ]
+    },
+    {
+      "branch": "fix/amp-initial-machine-latest",
+      "lastPackaged": {
+        "sourceCommit": "4871fe07675b718ceea02037b48e1334e918b48b",
+        "aggregateCommit": "7d8e57127e3d6d66fcb9cf927474df653b009a29"
+      },
+      "upstreamIssues": []
     }
   ]
 }
