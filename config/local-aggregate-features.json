@@ -167,6 +167,14 @@
         "aggregateCommit": "7d8e57127e3d6d66fcb9cf927474df653b009a29"
       },
       "upstreamIssues": []
+    },
+    {
+      "branch": "fix/amp-local-default",
+      "lastPackaged": {
+        "sourceCommit": "156795f473e06b960d5f459a38f0a598ef71fe5e",
+        "aggregateCommit": "9a9eebbacbfb2e77cad4ff3b26893a6adbc02e1d"
+      },
+      "upstreamIssues": []
     }
   ]
 }
