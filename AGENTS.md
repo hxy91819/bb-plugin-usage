@@ -31,7 +31,7 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/amp-provider-usage | afcad95 | f3bbf73 | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74), [#80](https://github.com/MayankBansal12/bb-plugin-usage/pull/80) |
 | feature/daily-stacked-bars | 6b3d545 | e012096 | [#82](https://github.com/MayankBansal12/bb-plugin-usage/issues/82), [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) |
 | fix/amp-initial-machine-latest | 59b307e | 0b72dc9 | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) |
-| fix/amp-local-default | 902c5c7 | feb1517 | [#88](https://github.com/MayankBansal12/bb-plugin-usage/pull/88) |
-| fix/usage-skeleton-bars | 3fce600 | 085b260 | [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) |
+| fix/amp-local-default | 902c5c7 | feb1517 | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) includes this change; [#88](https://github.com/MayankBansal12/bb-plugin-usage/pull/88) closed as consolidated |
+| fix/usage-skeleton-bars | 3fce600 | 085b260 | [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) includes this change; [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) closed as consolidated |
 | fix/cursor-sdk-token-accounting | 169eba2 | 12b5897 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
 <!-- open-source-fork-maintenance:end -->
