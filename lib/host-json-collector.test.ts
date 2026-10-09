@@ -865,6 +865,34 @@ describe("host JSON usage collector", () => {
     const usage = (inputTokens: number, outputTokens: number, cacheReadTokens = 0, cacheWriteTokens = 0) => ({
       inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens,
     });
+    it("prefers migrated v4 sessions over cached v3 predecessors while retaining v3-only sessions", async () => {
+      const root = await temporaryDirectory();
+      const cachePath = join(root, "cache.json");
+      const migrated = join(root, "migrated");
+      const legacy = join(root, "legacy");
+      await mkdir(migrated);
+      await mkdir(legacy);
+      await writeFile(join(migrated, "session.v3.jsonl.zstd"), frame([header(), context, message(2, usage(100, 20))]));
+      await writeFile(join(legacy, "session.v3.jsonl.zstd"), frame([header(), context, message(2, usage(30, 3))]));
+      const before = await scan("dsh", root, cachePath);
+      expect(before.rows).toEqual([expect.objectContaining({ uncachedInputTokens: 130, outputTokens: 23 })]);
+
+      await writeFile(join(migrated, "session.v4.jsonl.zstd"), frame([
+        { ...header(), version: 4 }, context,
+        message(2, usage(140, 25, 60)), message(3, usage(50, 7, 10), 2),
+      ]));
+      // A failed extra root must not resurrect the superseded v3 cache.
+      const invalidRoot = join(root, "not-a-directory");
+      await writeFile(invalidRoot, "");
+      const after = await scan("dsh", [root, invalidRoot], cachePath);
+      expect(after).toMatchObject({ fileCount: 2, failureCount: 1 });
+      expect(after.rows).toEqual([expect.objectContaining({
+        uncachedInputTokens: 220, cachedInputTokens: 70, outputTokens: 35,
+      })]);
+      expect(await scan("dsh", root, cachePath)).toMatchObject({
+        changedFileCount: 0, reusedFileCount: 2, rows: after.rows,
+      });
+    });
     const attempt = (seq: number, sample: ReturnType<typeof usage>) => ({
       type: "assistant/attempt", seq, time: timestamp + seq,
       data: { turn: 1, step: 1, stream: [{ type: "chunk", time: timestamp + seq, chunk: { type: "usage", usage: sample } }] },
