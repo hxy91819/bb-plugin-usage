@@ -178,6 +178,14 @@
         "aggregateCommit": "12b5897c73d12ebdb5a5cf342e6aa4c7ecc1935e"
       },
       "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 86, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/86" }]
+    },
+    {
+      "branch": "fix/dsh-v4-sessions",
+      "lastPackaged": {
+        "sourceCommit": "1d56da2776b2bf57255b49e567b02037410b189a",
+        "aggregateCommit": "2de21331ddfcc47ae978ea90ea9251b2c5af699b"
+      },
+      "upstreamIssues": []
     }
   ]
 }

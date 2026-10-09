@@ -34,4 +34,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | fix/amp-local-default | 902c5c7 | feb1517 | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) includes this change; [#88](https://github.com/MayankBansal12/bb-plugin-usage/pull/88) closed as consolidated |
 | fix/usage-skeleton-bars | 3fce600 | 085b260 | [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) includes this change; [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) closed as consolidated |
 | fix/cursor-sdk-token-accounting | 169eba2 | 12b5897 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
+| fix/dsh-v4-sessions | 1d56da2 | 2de2133 | Not submitted upstream |
 <!-- open-source-fork-maintenance:end -->
