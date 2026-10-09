@@ -26,12 +26,12 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/additional-agent-usage | 5c3a34c | 04b01d9 | [#69](https://github.com/MayankBansal12/bb-plugin-usage/issues/69), [#75](https://github.com/MayankBansal12/bb-plugin-usage/pull/75) |
 | feature/codex-profile-sessions | 30673a8 | 609944b | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44), [#81](https://github.com/MayankBansal12/bb-plugin-usage/pull/81) |
 | fix/codebuddy-dsh-pricing | 59bea66 | e6b3e3f | [#70](https://github.com/MayankBansal12/bb-plugin-usage/issues/70), [#79](https://github.com/MayankBansal12/bb-plugin-usage/pull/79) |
-| fix/stacked-chart-boundaries | 6c8f735 | 51148e4 | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71), [#77](https://github.com/MayankBansal12/bb-plugin-usage/pull/77) — superseded by feature/daily-stacked-bars |
+| fix/stacked-chart-boundaries | 6c8f735 | 51148e4 | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71), [#77](https://github.com/MayankBansal12/bb-plugin-usage/pull/77) closed — superseded by feature/daily-stacked-bars; retained as a historical stack prerequisite |
 | feature/breakdown-share-donut | b951c32 | 7eb4e0a | [#73](https://github.com/MayankBansal12/bb-plugin-usage/issues/73), [#76](https://github.com/MayankBansal12/bb-plugin-usage/pull/76) |
 | feature/amp-provider-usage | afcad95 | f3bbf73 | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74), [#80](https://github.com/MayankBansal12/bb-plugin-usage/pull/80) |
 | feature/daily-stacked-bars | 6b3d545 | e012096 | [#82](https://github.com/MayankBansal12/bb-plugin-usage/issues/82), [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) |
-| fix/amp-initial-machine-latest | 59b307e | 0b72dc9 | Not submitted |
-| fix/amp-local-default | 902c5c7 | feb1517 | Not submitted |
-| fix/usage-skeleton-bars | 3fce600 | 085b260 | Not submitted |
-| fix/cursor-sdk-token-accounting | 169eba2 | 12b5897 | Not submitted |
+| fix/amp-initial-machine-latest | 59b307e | 0b72dc9 | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) |
+| fix/amp-local-default | 902c5c7 | feb1517 | [#88](https://github.com/MayankBansal12/bb-plugin-usage/pull/88) |
+| fix/usage-skeleton-bars | 3fce600 | 085b260 | [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) |
+| fix/cursor-sdk-token-accounting | 169eba2 | 12b5897 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
 <!-- open-source-fork-maintenance:end -->
