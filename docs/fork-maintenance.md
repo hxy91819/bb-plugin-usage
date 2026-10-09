@@ -1,7 +1,7 @@
 # Fork packaging and installation
 
-`origin` is the read-only upstream repository. All source branches, the verified
-`local/aggregate`, and release tags are published to `fork`
+`upstream` is the read-only upstream repository. All source branches, the verified
+`local/aggregate`, and release tags are published to `origin`
 (`hxy91819/bb-plugin-usage`). This repository keeps its existing cherry-pick
 aggregation and `config/local-aggregate-features.json` registry; packaging does
 not migrate branch history. `fork-tooling`, based on the configured upstream
@@ -22,7 +22,7 @@ tag, starting at 1, then publish an annotated tag:
 
 ```sh
 git tag -a fork-v0.3.18-20261003.2 <verified-aggregate-sha> -m 'Usage aggregate release'
-git push fork refs/tags/fork-v0.3.18-20261003.2
+git push origin refs/tags/fork-v0.3.18-20261003.2
 gh run list --repo hxy91819/bb-plugin-usage --workflow fork-release.yml
 gh release view fork-v0.3.18-20261003.2 --repo hxy91819/bb-plugin-usage
 ```
