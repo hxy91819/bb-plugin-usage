@@ -155,7 +155,10 @@
         "sourceCommit": "902c5c72c765218ae8fabd979e24a9f6d9a65c5f",
         "aggregateCommit": "feb151725b958aa2bbc260109af1837df8b72b3f"
       },
-      "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 88, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/88" }]
+      "upstreamIssues": [
+        { "repository": "MayankBansal12/bb-plugin-usage", "number": 87, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/87" },
+        { "repository": "MayankBansal12/bb-plugin-usage", "number": 88, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/88" }
+      ]
     },
     {
       "branch": "fix/usage-skeleton-bars",
@@ -163,7 +166,10 @@
         "sourceCommit": "3fce60090a1cef40c6e375154d3730f93f2b6e98",
         "aggregateCommit": "085b2608ead8cf7068dd1d9881bc44adb23ee788"
       },
-      "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 89, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/89" }]
+      "upstreamIssues": [
+        { "repository": "MayankBansal12/bb-plugin-usage", "number": 83, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/83" },
+        { "repository": "MayankBansal12/bb-plugin-usage", "number": 89, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/89" }
+      ]
     },
     {
       "branch": "fix/cursor-sdk-token-accounting",
