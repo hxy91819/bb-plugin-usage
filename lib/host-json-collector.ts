@@ -257,10 +257,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   function matches(filePath: string) {
     const name = path.basename(filePath);
     if (input.agentId === "codex") return name.startsWith("rollout-") && name.endsWith(".jsonl");
-    // Only the canonical current generation: dsh keeps earlier immutable
-    // generations (session.jsonl.zstd, session.vN...) beside the live v3 log
-    // after a migration, and they replay the same history.
-    if (input.agentId === "dsh") return name === "session.v3.jsonl.zstd";
+    if (input.agentId === "dsh") return name === "session.v3.jsonl.zstd" || name === "session.v4.jsonl.zstd";
     if (input.agentId === "copilot") return name === "events.jsonl";
     if (input.agentId === "fx" || input.agentId === "freebuff" || input.agentId === "antigravity" || input.agentId === "thaura") return name === "usage.jsonl";
     if (input.agentId === "grok") return name === "unified.jsonl";
@@ -835,6 +832,13 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
 
   for (const filePath of uniquePaths) {
     const sourceId = crypto.createHash("sha256").update(filePath).digest("hex");
+    // DSH preserves the immutable v3 predecessor when publishing v4.
+    // Select the successor before merging cached rows to avoid replaying history twice.
+    if (input.agentId === "dsh" && path.basename(filePath) === "session.v3.jsonl.zstd"
+      && fs.existsSync(path.join(path.dirname(filePath), "session.v4.jsonl.zstd"))) {
+      delete cache.files[sourceId];
+      continue;
+    }
     const prior = cache.files[sourceId];
     // Attribution lives outside the file-derived signature, so rows reused
     // from cache take the current account mapping when a configured label
