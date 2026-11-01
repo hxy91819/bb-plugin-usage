@@ -186,6 +186,14 @@
         "aggregateCommit": "2de21331ddfcc47ae978ea90ea9251b2c5af699b"
       },
       "upstreamIssues": []
+    },
+    {
+      "branch": "fix/security-dependency-bumps",
+      "lastPackaged": {
+        "sourceCommit": "2acdcf4583414d579e1af77f14b344c41125a6f5",
+        "aggregateCommit": "57d84e0e8912c534479cbce714c0856102998f89"
+      },
+      "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 94, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/94" }]
     }
   ]
 }
