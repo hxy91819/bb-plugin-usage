@@ -1,0 +1,78 @@
+{
+  "tag": "fork-v0.3.20-20261029.1",
+  "sourceCommit": "ebf249aa136b1cfe8a44668f39734ce7ab25eda4",
+  "packageVersion": "0.3.20",
+  "platform": "portable JavaScript (BB on Linux/macOS)",
+  "testedPlatform": "linux-x64",
+  "bbBuildVersion": "0.47.0",
+  "sdkVersion": "0.6.75",
+  "engines": {
+    "bb": ">=0.36",
+    "bbPluginSdk": "^0.4.1"
+  },
+  "archive": "bb-plugin-usage-fork-v0.3.20-20261029.1-portable.tar.gz",
+  "sha256": "df35984f9a8fe34de03202db4c68e4064708ddf7b976891d86b3a852fa326fab",
+  "upstreamCommit": "e01c24d61b1ae58662e6639aefb9e709c7939455",
+  "features": [
+    {
+      "branch": "feature/additional-agent-usage",
+      "sourceCommit": "5c3a34cbfad00c6ad295a7b83338375605c3572c",
+      "aggregateCommit": "04b01d9a4ae4a5081a709f7986b7a91fdb3785c6"
+    },
+    {
+      "branch": "feature/codex-profile-sessions",
+      "sourceCommit": "30673a88ebc3214a5d8d82ef99820f98a74d2f9a",
+      "aggregateCommit": "609944b6afa624e7a6fd2d1761572ab4b74faa52"
+    },
+    {
+      "branch": "fix/codebuddy-dsh-pricing",
+      "sourceCommit": "59bea66f5e55344997cdb2b9445fba1aa468ed41",
+      "aggregateCommit": "e6b3e3f3ffeaa85f7ea44c9de2a0bb5ccac7cdc1"
+    },
+    {
+      "branch": "fix/stacked-chart-boundaries",
+      "sourceCommit": "6c8f7356f30e56a96f2d684d4b23190423006930",
+      "aggregateCommit": "51148e4766453d828bc37e7186b527cb076e4d3f"
+    },
+    {
+      "branch": "feature/breakdown-share-donut",
+      "sourceCommit": "b951c32b53a1039731e4996bfcdfda2107917620",
+      "aggregateCommit": "7eb4e0ae9cd19f4b77a6f6436a7c8bc181c74105"
+    },
+    {
+      "branch": "feature/amp-provider-usage",
+      "sourceCommit": "afcad959ff73dd6da05fb6a3ef27f8b5a6098a72",
+      "aggregateCommit": "f3bbf7348acce46b35aea4dc00d327793e04de7b"
+    },
+    {
+      "branch": "feature/daily-stacked-bars",
+      "sourceCommit": "6b3d5456a5bf5d371c4a62d1c16d265d50f6d32a",
+      "aggregateCommit": "e0120963702b3350bf0eb52b75de62ea0eced1d5"
+    },
+    {
+      "branch": "fix/amp-initial-machine-latest",
+      "sourceCommit": "59b307ee8cc4c82ec987231e04d4493c8868f6f5",
+      "aggregateCommit": "0b72dc9bdb58960644129191e59586c9a050c1f3"
+    },
+    {
+      "branch": "fix/amp-local-default",
+      "sourceCommit": "902c5c72c765218ae8fabd979e24a9f6d9a65c5f",
+      "aggregateCommit": "feb151725b958aa2bbc260109af1837df8b72b3f"
+    },
+    {
+      "branch": "fix/usage-skeleton-bars",
+      "sourceCommit": "3fce60090a1cef40c6e375154d3730f93f2b6e98",
+      "aggregateCommit": "085b2608ead8cf7068dd1d9881bc44adb23ee788"
+    },
+    {
+      "branch": "fix/cursor-sdk-token-accounting",
+      "sourceCommit": "169eba2fffe5de30ac21912cea3d4026d9bd8ef3",
+      "aggregateCommit": "12b5897c73d12ebdb5a5cf342e6aa4c7ecc1935e"
+    },
+    {
+      "branch": "fix/dsh-v4-sessions",
+      "sourceCommit": "1d56da2776b2bf57255b49e567b02037410b189a",
+      "aggregateCommit": "2de21331ddfcc47ae978ea90ea9251b2c5af699b"
+    }
+  ]
+}
