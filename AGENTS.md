@@ -19,20 +19,22 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 
 `feature/copilot-session-usage` is covered completely by upstream 4c5e1bb (#78) and is no longer replayed in the aggregate. Its source branch remains available for history.
 
+`fix/security-dependency-bumps` was retired on 2026-11-06: upstream merged it as bef704c (#94, v0.3.27), which is now the aggregate baseline, so the branch carries no unique behavior.
+
 ### Included branches
 
 | Branch | Source commit | Aggregate commit | Upstream feedback |
 |---|---|---|---|
-| feature/additional-agent-usage | 5c3a34c | 04b01d9 | [#69](https://github.com/MayankBansal12/bb-plugin-usage/issues/69), [#75](https://github.com/MayankBansal12/bb-plugin-usage/pull/75) |
-| feature/codex-profile-sessions | 30673a8 | 609944b | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44), [#81](https://github.com/MayankBansal12/bb-plugin-usage/pull/81) |
-| fix/codebuddy-dsh-pricing | 59bea66 | e6b3e3f | [#70](https://github.com/MayankBansal12/bb-plugin-usage/issues/70), [#79](https://github.com/MayankBansal12/bb-plugin-usage/pull/79) |
-| fix/stacked-chart-boundaries | 6c8f735 | 51148e4 | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71), [#77](https://github.com/MayankBansal12/bb-plugin-usage/pull/77) closed — superseded by feature/daily-stacked-bars; retained as a historical stack prerequisite |
-| feature/breakdown-share-donut | b951c32 | 7eb4e0a | [#73](https://github.com/MayankBansal12/bb-plugin-usage/issues/73), [#76](https://github.com/MayankBansal12/bb-plugin-usage/pull/76) |
-| feature/amp-provider-usage | afcad95 | f3bbf73 | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74), [#80](https://github.com/MayankBansal12/bb-plugin-usage/pull/80) |
-| feature/daily-stacked-bars | 6b3d545 | e012096 | [#82](https://github.com/MayankBansal12/bb-plugin-usage/issues/82), [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) |
-| fix/amp-initial-machine-latest | 59b307e | 0b72dc9 | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) |
-| fix/amp-local-default | 902c5c7 | feb1517 | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) includes this change; [#88](https://github.com/MayankBansal12/bb-plugin-usage/pull/88) closed as consolidated |
-| fix/usage-skeleton-bars | 3fce600 | 085b260 | [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) includes this change; [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) closed as consolidated |
-| fix/cursor-sdk-token-accounting | 169eba2 | 12b5897 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
-| fix/dsh-v4-sessions | 1d56da2 | 2de2133 | Not submitted upstream |
+| feature/additional-agent-usage | 4a7fc72 | 24f6a98 | [#69](https://github.com/MayankBansal12/bb-plugin-usage/issues/69), [#75](https://github.com/MayankBansal12/bb-plugin-usage/pull/75) |
+| feature/codex-profile-sessions | f2fa0eb | a57b8dd | [#44](https://github.com/MayankBansal12/bb-plugin-usage/issues/44), [#81](https://github.com/MayankBansal12/bb-plugin-usage/pull/81) |
+| fix/codebuddy-dsh-pricing | 6b9666b | 6a730bb | [#70](https://github.com/MayankBansal12/bb-plugin-usage/issues/70), [#79](https://github.com/MayankBansal12/bb-plugin-usage/pull/79) |
+| fix/stacked-chart-boundaries | 92cb456 | 49440c3 | [#71](https://github.com/MayankBansal12/bb-plugin-usage/issues/71), [#77](https://github.com/MayankBansal12/bb-plugin-usage/pull/77) closed — superseded by feature/daily-stacked-bars; retained as a historical stack prerequisite |
+| feature/breakdown-share-donut | 87ca1cc | c5c4a51 | [#73](https://github.com/MayankBansal12/bb-plugin-usage/issues/73), [#76](https://github.com/MayankBansal12/bb-plugin-usage/pull/76) |
+| feature/amp-provider-usage | f4a047f | 596c6e7 | [#74](https://github.com/MayankBansal12/bb-plugin-usage/issues/74), [#80](https://github.com/MayankBansal12/bb-plugin-usage/pull/80) |
+| feature/daily-stacked-bars | ad45cef | 35b9302 | [#82](https://github.com/MayankBansal12/bb-plugin-usage/issues/82), [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) |
+| fix/amp-initial-machine-latest | d00dda3 | 9236b3f | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) |
+| fix/amp-local-default | d00dda3 | 9236b3f | [#87](https://github.com/MayankBansal12/bb-plugin-usage/pull/87) includes this change; [#88](https://github.com/MayankBansal12/bb-plugin-usage/pull/88) closed as consolidated |
+| fix/usage-skeleton-bars | 8944f59 | 35b9302 | [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) includes this change; [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) closed as consolidated |
+| fix/cursor-sdk-token-accounting | f3f3718 | 1766383 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
+| fix/dsh-v4-sessions | f2a3959 | 4b382b8 | Not submitted upstream |
 <!-- open-source-fork-maintenance:end -->

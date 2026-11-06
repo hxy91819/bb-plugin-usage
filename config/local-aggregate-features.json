@@ -3,15 +3,15 @@
   "aggregate": {
     "branch": "local/aggregate",
     "upstreamRef": "upstream/main",
-    "lastIntegratedUpstreamCommit": "e01c24d61b1ae58662e6639aefb9e709c7939455",
+    "lastIntegratedUpstreamCommit": "bef704c1129425936e72b8db2e7b436990f39c68",
     "stableTagPattern": null
   },
   "features": [
     {
       "branch": "feature/additional-agent-usage",
       "lastPackaged": {
-        "sourceCommit": "5c3a34cbfad00c6ad295a7b83338375605c3572c",
-        "aggregateCommit": "04b01d9a4ae4a5081a709f7986b7a91fdb3785c6"
+        "sourceCommit": "4a7fc7257e194b4e84cce13994b425ab1260722a",
+        "aggregateCommit": "24f6a98470f4d4d4995211657c7bccf7da6cc204"
       },
       "upstreamIssues": [
         {
@@ -29,8 +29,8 @@
     {
       "branch": "feature/codex-profile-sessions",
       "lastPackaged": {
-        "sourceCommit": "30673a88ebc3214a5d8d82ef99820f98a74d2f9a",
-        "aggregateCommit": "609944b6afa624e7a6fd2d1761572ab4b74faa52"
+        "sourceCommit": "f2fa0eb2bb322d6d0ab62b1b61f663e2df98a3c5",
+        "aggregateCommit": "a57b8dd8bfb2ca4321986c91a1f783c37865ca7d"
       },
       "upstreamIssues": [
         {
@@ -48,8 +48,8 @@
     {
       "branch": "fix/codebuddy-dsh-pricing",
       "lastPackaged": {
-        "sourceCommit": "59bea66f5e55344997cdb2b9445fba1aa468ed41",
-        "aggregateCommit": "e6b3e3f3ffeaa85f7ea44c9de2a0bb5ccac7cdc1"
+        "sourceCommit": "6b9666ba2ac43bbf55e2726318e47ff95c9612d7",
+        "aggregateCommit": "6a730bbd8865be971bfcb1f84300a19a140cae5a"
       },
       "upstreamIssues": [
         {
@@ -67,8 +67,8 @@
     {
       "branch": "fix/stacked-chart-boundaries",
       "lastPackaged": {
-        "sourceCommit": "6c8f7356f30e56a96f2d684d4b23190423006930",
-        "aggregateCommit": "51148e4766453d828bc37e7186b527cb076e4d3f"
+        "sourceCommit": "92cb456872e325ae737b0eb5da72d3406b09a73d",
+        "aggregateCommit": "49440c33ba63d24c364f12396c0ecb00decb6246"
       },
       "upstreamIssues": [
         {
@@ -87,8 +87,8 @@
     {
       "branch": "feature/breakdown-share-donut",
       "lastPackaged": {
-        "sourceCommit": "b951c32b53a1039731e4996bfcdfda2107917620",
-        "aggregateCommit": "7eb4e0ae9cd19f4b77a6f6436a7c8bc181c74105"
+        "sourceCommit": "87ca1cc606b85821d243b790ebbb6049f61496cf",
+        "aggregateCommit": "c5c4a5180f148b9c148f304ba51c111d0bb2413c"
       },
       "upstreamIssues": [
         {
@@ -106,8 +106,8 @@
     {
       "branch": "feature/amp-provider-usage",
       "lastPackaged": {
-        "sourceCommit": "afcad959ff73dd6da05fb6a3ef27f8b5a6098a72",
-        "aggregateCommit": "f3bbf7348acce46b35aea4dc00d327793e04de7b"
+        "sourceCommit": "f4a047fb6b2d4d4eda5ec494267db2667efb6c04",
+        "aggregateCommit": "596c6e79ed78a96a8c2a5d26fc21e9433be53e91"
       },
       "upstreamIssues": [
         {
@@ -125,8 +125,8 @@
     {
       "branch": "feature/daily-stacked-bars",
       "lastPackaged": {
-        "sourceCommit": "6b3d5456a5bf5d371c4a62d1c16d265d50f6d32a",
-        "aggregateCommit": "e0120963702b3350bf0eb52b75de62ea0eced1d5"
+        "sourceCommit": "ad45cefbc058287dc016fa9d4bd22b65e865a839",
+        "aggregateCommit": "35b9302c200fdfcc08e2a44acbaddc3a5e160992"
       },
       "upstreamIssues": [
         {
@@ -144,16 +144,16 @@
     {
       "branch": "fix/amp-initial-machine-latest",
       "lastPackaged": {
-        "sourceCommit": "59b307ee8cc4c82ec987231e04d4493c8868f6f5",
-        "aggregateCommit": "0b72dc9bdb58960644129191e59586c9a050c1f3"
+        "sourceCommit": "d00dda353d8672c0fb2cb0a6c987d4fa0eb2aff8",
+        "aggregateCommit": "9236b3f736bcedbbe9bbff84afd7e9c17ba617e3"
       },
       "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 87, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/87" }]
     },
     {
       "branch": "fix/amp-local-default",
       "lastPackaged": {
-        "sourceCommit": "902c5c72c765218ae8fabd979e24a9f6d9a65c5f",
-        "aggregateCommit": "feb151725b958aa2bbc260109af1837df8b72b3f"
+        "sourceCommit": "d00dda353d8672c0fb2cb0a6c987d4fa0eb2aff8",
+        "aggregateCommit": "9236b3f736bcedbbe9bbff84afd7e9c17ba617e3"
       },
       "upstreamIssues": [
         { "repository": "MayankBansal12/bb-plugin-usage", "number": 87, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/87" },
@@ -163,8 +163,8 @@
     {
       "branch": "fix/usage-skeleton-bars",
       "lastPackaged": {
-        "sourceCommit": "3fce60090a1cef40c6e375154d3730f93f2b6e98",
-        "aggregateCommit": "085b2608ead8cf7068dd1d9881bc44adb23ee788"
+        "sourceCommit": "8944f5953d666dd9037423c424a6767cbfd4f2f4",
+        "aggregateCommit": "35b9302c200fdfcc08e2a44acbaddc3a5e160992"
       },
       "upstreamIssues": [
         { "repository": "MayankBansal12/bb-plugin-usage", "number": 83, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/83" },
@@ -174,16 +174,16 @@
     {
       "branch": "fix/cursor-sdk-token-accounting",
       "lastPackaged": {
-        "sourceCommit": "169eba2fffe5de30ac21912cea3d4026d9bd8ef3",
-        "aggregateCommit": "12b5897c73d12ebdb5a5cf342e6aa4c7ecc1935e"
+        "sourceCommit": "f3f3718a050303df0674c66525c3bc3626842e29",
+        "aggregateCommit": "1766383ba0094759b27d4402c073f1d1e33c6e21"
       },
       "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 86, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/86" }]
     },
     {
       "branch": "fix/dsh-v4-sessions",
       "lastPackaged": {
-        "sourceCommit": "1d56da2776b2bf57255b49e567b02037410b189a",
-        "aggregateCommit": "2de21331ddfcc47ae978ea90ea9251b2c5af699b"
+        "sourceCommit": "f2a39592147733597ce29b16b09f2fe9b5458647",
+        "aggregateCommit": "4b382b89f48d46f16af98e3191fdf33be1d8498a"
       },
       "upstreamIssues": []
     }
