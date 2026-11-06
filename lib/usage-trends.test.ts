@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MIX_OTHER_KEY, buildUsageTrends, type TrendRow } from "./usage-trends";
+import { MIX_OTHER_KEY, buildUsageTrends, hasTrendUsage, type TrendRow } from "./usage-trends";
 
 const today = new Date(2026, 10, 6, 15, 30);
 
@@ -93,7 +93,7 @@ describe("buildUsageTrends", () => {
     expect(trends.models[0]!.agents).toEqual(["Codex", "Pi"]);
   });
 
-  it("uses cost in cost mode and flags rows that include unpriced usage", () => {
+  it("uses cost in cost mode and flags the period that includes unpriced usage", () => {
     const rows = [
       row({ day: dayOffset(0), costUsd: 2, processedTokens: 1 }),
       row({ day: dayOffset(0), model: "mystery", costUsd: 0, processedTokens: 5_000, pricingStatus: "unknown" }),
@@ -103,10 +103,32 @@ describe("buildUsageTrends", () => {
     expect(trends.total.current).toBe(2);
     expect(trends.total.previous).toBe(4);
     expect(trends.total.direction).toBe("down");
-    expect(trends.total.unknown).toBe(true);
-    expect(trends.models.find((model) => model.label === "mystery")?.unknown).toBe(true);
-    expect(trends.models.find((model) => model.label === "gpt-5")?.unknown).toBe(false);
-    expect(buildUsageTrends(rows, { period: 7, metric: "tokens", today }).total.unknown).toBe(false);
+    expect(trends.total.currentUnknown).toBe(true);
+    expect(trends.total.previousUnknown).toBe(false);
+    expect(trends.models.find((model) => model.label === "mystery")?.currentUnknown).toBe(true);
+    expect(trends.models.find((model) => model.label === "gpt-5")?.currentUnknown).toBe(false);
+    expect(buildUsageTrends(rows, { period: 7, metric: "tokens", today }).total.currentUnknown).toBe(false);
+  });
+
+  it("reports no comparison instead of a drop when a period's cost is entirely unpriced", () => {
+    const unpriced = (day: string) => row({ day, model: "mystery", costUsd: 0, processedTokens: 5_000, pricingStatus: "unknown" });
+    const currentUnknown = buildUsageTrends([unpriced(dayOffset(0)), row({ day: dayOffset(8), costUsd: 5 })], { period: 7, metric: "cost", today });
+    expect(currentUnknown.total).toMatchObject({ current: 0, previous: 5, change: null, direction: "unknown", currentUnknown: true, previousUnknown: false });
+    const previousUnknown = buildUsageTrends([row({ day: dayOffset(0), costUsd: 10 }), unpriced(dayOffset(8))], { period: 7, metric: "cost", today });
+    expect(previousUnknown.total).toMatchObject({ current: 10, previous: 0, change: null, direction: "unknown", currentUnknown: false, previousUnknown: true });
+    const bothUnknown = buildUsageTrends([unpriced(dayOffset(0)), unpriced(dayOffset(8))], { period: 7, metric: "cost", today });
+    expect(bothUnknown.total.direction).toBe("unknown");
+    expect(bothUnknown.models[0]!.direction).toBe("unknown");
+  });
+
+  it("ranks unpriced models ahead of true zeros so they stay visible in cost mode", () => {
+    const rows = [
+      row({ day: dayOffset(0), model: "gpt-5", costUsd: 3 }),
+      row({ day: dayOffset(9), model: "retired", costUsd: 1 }),
+      row({ day: dayOffset(0), model: "mystery", costUsd: 0, processedTokens: 5_000, pricingStatus: "unknown" }),
+    ];
+    const trends = buildUsageTrends(rows, { period: 7, metric: "cost", today });
+    expect(trends.models.map((model) => model.label)).toEqual(["gpt-5", "mystery", "retired"]);
   });
 
   it("reports model share shifts relative to each period's own total", () => {
@@ -122,6 +144,22 @@ describe("buildUsageTrends", () => {
       ["gpt-5-mini", 0.4, 0.6, "down"],
     ]);
     expect(trends.mix[0]!.deltaShare).toBeCloseTo(0.2);
+  });
+
+  it("keeps unpriced models in the mix as unknown instead of a zero share", () => {
+    const rows = [
+      row({ day: dayOffset(0), model: "gpt-5", costUsd: 4 }),
+      row({ day: dayOffset(0), model: "mystery", costUsd: 0, processedTokens: 5_000, pricingStatus: "unknown" }),
+      row({ day: dayOffset(8), model: "mystery", costUsd: 0, processedTokens: 5_000, pricingStatus: "unknown" }),
+      row({ day: dayOffset(8), model: "gpt-5", costUsd: 2 }),
+      row({ day: dayOffset(8), model: "shadow", costUsd: 0, processedTokens: 10, pricingStatus: "unknown" }),
+    ];
+    const trends = buildUsageTrends(rows, { period: 7, metric: "cost", today });
+    expect(trends.mix.map((item) => [item.label, item.direction, item.currentUnknown, item.previousUnknown])).toEqual([
+      ["gpt-5", "flat", false, false],
+      ["mystery", "unknown", true, true],
+      ["shadow", "unknown", false, true],
+    ]);
   });
 
   it("folds long-tail and sub-one-percent models into Other", () => {
@@ -144,5 +182,18 @@ describe("buildUsageTrends", () => {
     expect(trends.agents).toEqual([]);
     expect(trends.models).toEqual([]);
     expect(trends.mix).toEqual([]);
+  });
+});
+
+describe("hasTrendUsage", () => {
+  it("is true when any trend window has usage even if the selected period is empty", () => {
+    const rows = [row({ day: dayOffset(20) })];
+    expect(hasTrendUsage(rows, today)).toBe(true);
+    expect(buildUsageTrends(rows, { period: 7, metric: "tokens", today }).total.direction).toBe("none");
+    expect(buildUsageTrends(rows, { period: 30, metric: "tokens", today }).total.direction).toBe("new");
+  });
+
+  it("is false when the only usage is older than sixty days or in the future", () => {
+    expect(hasTrendUsage([row({ day: dayOffset(60) }), row({ day: dayOffset(-1) })], today)).toBe(false);
   });
 });

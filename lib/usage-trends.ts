@@ -16,8 +16,9 @@ export type TrendRow = {
   pricingStatus: string;
 };
 
-// `new`: usage only in the current period; `none`: no usage in either.
-export type TrendDirection = "up" | "down" | "flat" | "new" | "none";
+// `new`: usage only in the current period; `none`: no usage in either;
+// `unknown`: a period's cost is entirely unpriced, so no comparison exists.
+export type TrendDirection = "up" | "down" | "flat" | "new" | "none" | "unknown";
 
 export type TrendSeries = {
   key: string;
@@ -34,8 +35,10 @@ export type TrendSeries = {
   direction: TrendDirection;
   currentDaily: number[];
   previousDaily: number[];
-  // Cost mode only: the row includes unpriced usage, so the value is a lower bound.
-  unknown: boolean;
+  // Cost mode only: that period includes unpriced usage, so its value is a
+  // lower bound, or entirely unknown when the priced value is zero.
+  currentUnknown: boolean;
+  previousUnknown: boolean;
 };
 
 export type TrendMixShift = {
@@ -50,6 +53,8 @@ export type TrendMixShift = {
   // Fractional points: 0.05 is five percentage points.
   deltaShare: number;
   direction: TrendDirection;
+  currentUnknown: boolean;
+  previousUnknown: boolean;
   otherCount: number;
 };
 
@@ -84,6 +89,19 @@ function trendDays(period: TrendPeriod, today: Date) {
   return { previousDays: days.slice(0, period), currentDays: days.slice(period) };
 }
 
+// Whether any period or metric could show a trend, independent of the
+// current selection, so the section and its controls stay reachable.
+export function hasTrendUsage(rows: Array<Pick<TrendRow, "day" | "processedTokens" | "costUsd">>, today = new Date()) {
+  const { previousDays, currentDays } = trendDays(30, today);
+  const earliest = previousDays[0]!;
+  const latest = currentDays[currentDays.length - 1]!;
+  return rows.some((row) => row.day >= earliest && row.day <= latest && (row.processedTokens > 0 || row.costUsd > 0));
+}
+
+export function isUnknownValue(value: number, unknown: boolean) {
+  return unknown && value === 0;
+}
+
 function trendValue(row: Pick<TrendRow, "processedTokens" | "costUsd">, metric: TrendMetric) {
   return metric === "cost" ? row.costUsd : row.processedTokens;
 }
@@ -109,12 +127,14 @@ type Bucket = {
   agents: Set<string>;
   currentDaily: number[];
   previousDaily: number[];
-  unknown: boolean;
+  currentUnknown: boolean;
+  previousUnknown: boolean;
 };
 
 function finishBucket(bucket: Bucket, period: TrendPeriod): TrendSeries {
   const current = bucket.currentDaily.reduce((sum, value) => sum + value, 0);
   const previous = bucket.previousDaily.reduce((sum, value) => sum + value, 0);
+  const incomparable = isUnknownValue(current, bucket.currentUnknown) || isUnknownValue(previous, bucket.previousUnknown);
   return {
     key: bucket.key,
     label: bucket.label,
@@ -126,11 +146,12 @@ function finishBucket(bucket: Bucket, period: TrendPeriod): TrendSeries {
     current,
     previous,
     dailyAverage: current / period,
-    change: previous > 0 ? (current - previous) / previous : null,
-    direction: trendDirection(current, previous),
+    change: !incomparable && previous > 0 ? (current - previous) / previous : null,
+    direction: incomparable ? "unknown" : trendDirection(current, previous),
     currentDaily: bucket.currentDaily,
     previousDaily: bucket.previousDaily,
-    unknown: bucket.unknown,
+    currentUnknown: bucket.currentUnknown,
+    previousUnknown: bucket.previousUnknown,
   };
 }
 
@@ -142,12 +163,13 @@ export function buildUsageTrends(
   const { currentDays, previousDays } = trendDays(period, options.today ?? new Date());
   const currentIndex = new Map(currentDays.map((day, index) => [day, index]));
   const previousIndex = new Map(previousDays.map((day, index) => [day, index]));
-  const bucket = (seed: Omit<Bucket, "agents" | "currentDaily" | "previousDaily" | "unknown">): Bucket => ({
+  const bucket = (seed: Omit<Bucket, "agents" | "currentDaily" | "previousDaily" | "currentUnknown" | "previousUnknown">): Bucket => ({
     ...seed,
     agents: new Set(),
     currentDaily: new Array<number>(period).fill(0),
     previousDaily: new Array<number>(period).fill(0),
-    unknown: false,
+    currentUnknown: false,
+    previousUnknown: false,
   });
   const total = bucket({ key: "$total", label: "All usage", agentId: null, agentName: null, providerId: null, providerName: null });
   const agents = new Map<string, Bucket>();
@@ -169,16 +191,25 @@ export function buildUsageTrends(
       providerId: row.modelProviderId, providerName: row.modelProviderName,
     });
     for (const target of [total, agent, model]) {
-      if (inCurrent !== undefined) target.currentDaily[inCurrent] += value;
-      else target.previousDaily[inPrevious!] += value;
-      target.unknown = target.unknown || unknown;
+      if (inCurrent !== undefined) {
+        target.currentDaily[inCurrent] += value;
+        target.currentUnknown = target.currentUnknown || unknown;
+      } else {
+        target.previousDaily[inPrevious!] += value;
+        target.previousUnknown = target.previousUnknown || unknown;
+      }
       target.agents.add(row.agentName);
     }
     agents.set(agentKey, agent);
     models.set(modelKey, model);
   }
 
-  const byCurrent = (a: TrendSeries, b: TrendSeries) => b.current - a.current || b.previous - a.previous || a.label.localeCompare(b.label);
+  // Rows whose priced value is unknown rank ahead of true zeros so they stay visible.
+  const byCurrent = (a: TrendSeries, b: TrendSeries) =>
+    b.current - a.current
+    || Number(isUnknownValue(b.current, b.currentUnknown)) - Number(isUnknownValue(a.current, a.currentUnknown))
+    || b.previous - a.previous
+    || a.label.localeCompare(b.label);
   const totalSeries = finishBucket(total, period);
   const agentSeries = [...agents.values()].map((item) => finishBucket(item, period)).sort(byCurrent);
   const modelSeries = [...models.values()].map((item) => finishBucket(item, period)).sort(byCurrent);
@@ -195,24 +226,32 @@ export function buildUsageTrends(
   };
 }
 
-// Shares are relative to each period's own total, so a model that grew faster
-// than the total gains share even when everything grew. Models outside the top
-// rows or below MIX_MIN_SHARE in both periods fold into Other.
+// Shares are relative to each period's own priced total, so a model that grew
+// faster than the total gains share even when everything grew. Models outside
+// the top rows or below MIX_MIN_SHARE in both periods fold into Other; a model
+// whose priced value is unknown in a period stays visible with that marked.
 function buildMix(models: TrendSeries[], total: TrendSeries): TrendMixShift[] {
   const share = (value: number, sum: number) => (sum > 0 ? value / sum : 0);
+  const unknownIn = (model: Pick<TrendSeries, "current" | "previous" | "currentUnknown" | "previousUnknown">) =>
+    isUnknownValue(model.current, model.currentUnknown) || isUnknownValue(model.previous, model.previousUnknown);
   const ranked = models
     .map((model) => ({
       model,
       currentShare: share(model.current, total.current),
       previousShare: share(model.previous, total.previous),
     }))
-    .filter((item) => item.currentShare > 0 || item.previousShare > 0)
-    .sort((a, b) => b.currentShare - a.currentShare || b.previousShare - a.previousShare || a.model.label.localeCompare(b.model.label));
+    .filter((item) => item.currentShare > 0 || item.previousShare > 0 || unknownIn(item.model))
+    .sort((a, b) =>
+      b.currentShare - a.currentShare
+      || Number(unknownIn(b.model)) - Number(unknownIn(a.model))
+      || b.previousShare - a.previousShare
+      || a.model.label.localeCompare(b.model.label));
   const visible = ranked.filter((item, index) =>
-    index < MIX_TOP_ROWS && (item.currentShare >= MIX_MIN_SHARE || item.previousShare >= MIX_MIN_SHARE));
+    index < MIX_TOP_ROWS && (item.currentShare >= MIX_MIN_SHARE || item.previousShare >= MIX_MIN_SHARE || unknownIn(item.model)));
   const folded = ranked.filter((item) => !visible.includes(item));
   const shift = (item: typeof ranked[number]): TrendMixShift => {
     const deltaShare = item.currentShare - item.previousShare;
+    const incomparable = unknownIn(item.model);
     return {
       key: item.model.key,
       label: item.model.label,
@@ -223,9 +262,13 @@ function buildMix(models: TrendSeries[], total: TrendSeries): TrendMixShift[] {
       currentShare: item.currentShare,
       previousShare: item.previousShare,
       deltaShare,
-      direction: item.previousShare <= 0
-        ? (item.currentShare > 0 ? "new" : "none")
-        : Math.abs(deltaShare) < FLAT_SHARE_THRESHOLD ? "flat" : deltaShare > 0 ? "up" : "down",
+      direction: incomparable
+        ? "unknown"
+        : item.previousShare <= 0
+          ? (item.currentShare > 0 ? "new" : "none")
+          : Math.abs(deltaShare) < FLAT_SHARE_THRESHOLD ? "flat" : deltaShare > 0 ? "up" : "down",
+      currentUnknown: item.model.currentUnknown,
+      previousUnknown: item.model.previousUnknown,
       otherCount: 0,
     };
   };
@@ -240,6 +283,9 @@ function buildMix(models: TrendSeries[], total: TrendSeries): TrendMixShift[] {
         providerName: null,
         agents: [...new Set(folded.flatMap((item) => item.model.agents))],
         current: folded.reduce((sum, item) => sum + item.model.current, 0),
+        previous: folded.reduce((sum, item) => sum + item.model.previous, 0),
+        currentUnknown: folded.some((item) => item.model.currentUnknown),
+        previousUnknown: folded.some((item) => item.model.previousUnknown),
       },
       currentShare: folded.reduce((sum, item) => sum + item.currentShare, 0),
       previousShare: folded.reduce((sum, item) => sum + item.previousShare, 0),
