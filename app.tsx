@@ -2145,10 +2145,6 @@ function UsageDashboard() {
            </>
          )}
 
-        {(rows.length === 0 || !stackedView || mobileSection === "chart") && (
-          <UsageTrendsSection records={trendRecords} compactView={compactView} stackedView={stackedView} />
-        )}
-
         <footer className={`flex flex-col gap-2 pb-1 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 ${rows.length > 0 ? "border-t border-border/70 pt-4" : "pt-2"}`}>
           {rows.length > 0 && <span className="min-w-0 flex-1 leading-5 sm:max-w-[60%]">{data.notice} Costs use models.dev pricing as of {data.pricingVersion}.</span>}
           <a

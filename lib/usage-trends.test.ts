@@ -175,6 +175,19 @@ describe("buildUsageTrends", () => {
     expect(trends.mix.reduce((sum, item) => sum + item.currentShare, 0)).toBeCloseTo(1);
   });
 
+  it("keeps an unpriced model visible when sub-one-percent models outnumber the top rows", () => {
+    const rows = [
+      row({ day: dayOffset(0), model: "gpt-5", costUsd: 400 }),
+      row({ day: dayOffset(0), model: "claude", modelProviderId: "anthropic", costUsd: 400 }),
+      ...Array.from({ length: 8 }, (_, index) => row({ day: dayOffset(0), model: `tail-${index}`, costUsd: 0.5 })),
+      row({ day: dayOffset(0), model: "mystery", costUsd: 0, processedTokens: 50_000, pricingStatus: "unknown" }),
+    ];
+    const trends = buildUsageTrends(rows, { period: 7, metric: "cost", today });
+    expect(trends.mix.map((item) => item.label)).toEqual(["claude", "gpt-5", "mystery", "Other"]);
+    expect(trends.mix[2]).toMatchObject({ direction: "unknown", currentUnknown: true });
+    expect(trends.mix.at(-1)).toMatchObject({ key: MIX_OTHER_KEY, otherCount: 8 });
+  });
+
   it("returns empty, directionless trends when no rows fall in either window", () => {
     const trends = buildUsageTrends([row({ day: dayOffset(90) })], { period: 30, metric: "tokens", today });
     expect(trends.total.direction).toBe("none");
