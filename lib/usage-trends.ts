@@ -246,8 +246,9 @@ function buildMix(models: TrendSeries[], total: TrendSeries): TrendMixShift[] {
       || Number(unknownIn(b.model)) - Number(unknownIn(a.model))
       || b.previousShare - a.previousShare
       || a.model.label.localeCompare(b.model.label));
-  const visible = ranked.filter((item, index) =>
-    index < MIX_TOP_ROWS && (item.currentShare >= MIX_MIN_SHARE || item.previousShare >= MIX_MIN_SHARE || unknownIn(item.model)));
+  const visible = ranked
+    .filter((item) => item.currentShare >= MIX_MIN_SHARE || item.previousShare >= MIX_MIN_SHARE || unknownIn(item.model))
+    .slice(0, MIX_TOP_ROWS);
   const folded = ranked.filter((item) => !visible.includes(item));
   const shift = (item: typeof ranked[number]): TrendMixShift => {
     const deltaShare = item.currentShare - item.previousShare;
