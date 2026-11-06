@@ -25,6 +25,7 @@ import { clampPercent, formatLimitReset, formatLimitValue, isLimitVisibleOnMachi
 import { formatLocalMoney, localCurrency, usdToLocalRate } from "@/lib/local-currency";
 import { providerResetAction, resetCreditExpiry } from "@/lib/provider-resets";
 import { limitAccountLabel, limitCardNotice, limitStatusTag, type LimitCardNotice } from "@/lib/limit-card";
+import { buildUsageTrends, MIX_OTHER_KEY, type TrendDirection, type TrendMetric, type TrendMixShift, type TrendPeriod, type TrendSeries } from "@/lib/usage-trends";
 
 type Range = 7 | 30 | 90;
 type BreakdownMode = "model" | "project" | "day";
@@ -407,6 +408,335 @@ function StatCard({
       </div>
       <Sparkline values={values} color={color} />
     </div>
+  );
+}
+
+// Two-period sparkline: the previous period is drawn dashed behind the current
+// one so a glance shows whether the recent shape sits above or below it.
+function TrendSparkline({ current, previous, color, className = "h-8" }: {
+  current: number[];
+  previous: number[];
+  color: string;
+  className?: string;
+}) {
+  const width = 100;
+  const height = 32;
+  const gradientId = useRef(`trend-${Math.random().toString(36).slice(2)}`);
+  const maximum = Math.max(1e-9, ...current, ...previous);
+  const toPoints = (values: number[]) => values.map((value, index) => ({
+    x: values.length > 1 ? (index / (values.length - 1)) * width : width / 2,
+    y: height - (value / maximum) * (height - 3) - 1.5,
+  }));
+  const currentLine = smoothPath(toPoints(current), 1.5, height - 1.5);
+  const previousLine = smoothPath(toPoints(previous), 1.5, height - 1.5);
+  const area = currentLine ? `${currentLine} L ${width} ${height} L 0 ${height} Z` : "";
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className={`w-full overflow-visible ${className}`}
+      role="presentation"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradientId.current} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {area && <path d={area} fill={`url(#${gradientId.current})`} />}
+      {previousLine && (
+        <path
+          d={previousLine}
+          fill="none"
+          className="stroke-muted-foreground/50"
+          strokeWidth="1.5"
+          strokeDasharray="3 3"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+      {currentLine && (
+        <path
+          d={currentLine}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+    </svg>
+  );
+}
+
+function formatChangeMagnitude(change: number) {
+  const magnitude = Math.abs(change) * 100;
+  return `${magnitude >= 10 ? magnitude.toFixed(0) : magnitude.toFixed(1)}%`;
+}
+
+function formatChange(change: number) {
+  return `${change < 0 ? "−" : "+"}${formatChangeMagnitude(change)}`;
+}
+
+function formatSharePoints(deltaShare: number) {
+  return `${deltaShare < 0 ? "−" : "+"}${(Math.abs(deltaShare) * 100).toFixed(1)} pp`;
+}
+
+function TrendBadge({ direction, label, title }: { direction: TrendDirection; label: string; title?: string }) {
+  if (direction === "none") return null;
+  const icon = direction === "up" ? "ArrowUp" : direction === "down" ? "ArrowDown" : direction === "flat" ? "ArrowRight" : null;
+  return (
+    <span
+      title={title}
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded-md bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium leading-4 tabular-nums ${direction === "up" || direction === "down" ? "text-foreground" : "text-muted-foreground"}`}
+    >
+      {icon && <Icon name={icon} className="size-3" aria-hidden="true" />}
+      {label}
+    </span>
+  );
+}
+
+function trendBadgeLabel(series: Pick<TrendSeries, "direction" | "change">) {
+  if (series.direction === "new") return "New";
+  if (series.direction === "flat") return "Flat";
+  return series.change === null ? "" : formatChange(series.change);
+}
+
+function TrendAmount({ series, metric }: { series: Pick<TrendSeries, "current" | "unknown">; metric: TrendMetric }) {
+  return metric === "cost" ? <PricedCost cost={series.current} unknown={series.unknown} /> : <>{compact(series.current)}</>;
+}
+
+function trendSummary(series: TrendSeries, period: TrendPeriod) {
+  const before = `the ${period} days before`;
+  switch (series.direction) {
+    case "up": return `Up ${formatChangeMagnitude(series.change ?? 0)} from ${before}`;
+    case "down": return `Down ${formatChangeMagnitude(series.change ?? 0)} from ${before}`;
+    case "flat": return `About the same as ${before}`;
+    case "new": return `No usage in ${before}`;
+    default: return "No usage in either period";
+  }
+}
+
+function TrendPreviousAmount({ series, metric }: { series: Pick<TrendSeries, "previous" | "unknown">; metric: TrendMetric }) {
+  if (metric === "tokens") return <>Previously {compact(series.previous)}</>;
+  if (series.unknown && series.previous === 0) return <>Previous cost unknown</>;
+  return <>Previously <CostValue value={series.previous} />{series.unknown ? "+" : ""}</>;
+}
+
+function TrendCard({ title, detail, children }: { title: string; detail?: ReactNode; children: ReactNode }) {
+  return (
+    <div className={`flex min-w-0 flex-col p-4 sm:p-5 ${CARD_CLASSES}`}>
+      <div className="text-xs font-medium text-muted-foreground">{title}</div>
+      {detail && <div className="mt-0.5 text-[11px] text-muted-foreground/80">{detail}</div>}
+      {children}
+    </div>
+  );
+}
+
+// Reserves the logo footprint even when no brand mark exists so row text stays aligned.
+function TrendLogo({ id, name }: { id: string | null; name: string }) {
+  return (
+    <span className="flex size-[15px] shrink-0 items-center justify-center">
+      <ProviderLogo id={id} name={name} size="sm" />
+    </span>
+  );
+}
+
+function TrendOverview({ series, period, metric }: { series: TrendSeries; period: TrendPeriod; metric: TrendMetric }) {
+  const metricLabel = metric === "cost" ? "cost" : "tokens";
+  return (
+    <TrendCard title={`Total ${metricLabel} · last ${period} days`}>
+      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <div className="truncate text-2xl font-semibold leading-8 tracking-tight tabular-nums">
+          <TrendAmount series={series} metric={metric} />
+        </div>
+        <TrendBadge direction={series.direction} label={trendBadgeLabel(series)} />
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">{trendSummary(series, period)}</div>
+      <div className="mt-4 flex min-h-12 flex-1 flex-col justify-end">
+        <TrendSparkline current={series.currentDaily} previous={series.previousDaily} color={FALLBACK_PROVIDER_COLORS[0]} className="h-full min-h-12" />
+      </div>
+      <div className="mt-2 flex flex-wrap justify-between gap-x-3 text-[11px] text-muted-foreground">
+        <span className="tabular-nums">
+          {metric === "cost" ? <CostValue value={series.dailyAverage} /> : compact(series.dailyAverage)} per day · <TrendPreviousAmount series={series} metric={metric} />
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-4 border-t-2 border-dashed border-muted-foreground/60" aria-hidden="true" />
+          Previous {period} days
+        </span>
+      </div>
+    </TrendCard>
+  );
+}
+
+const TREND_LIST_ROWS = 5;
+
+function TrendList({ title, items, metric, period, logoFor, bylineFor, compactView }: {
+  title: string;
+  items: TrendSeries[];
+  metric: TrendMetric;
+  period: TrendPeriod;
+  logoFor: (series: TrendSeries) => string | null;
+  bylineFor: (series: TrendSeries) => ReactNode;
+  compactView: boolean;
+}) {
+  const visible = items.slice(0, TREND_LIST_ROWS);
+  const hidden = items.length - visible.length;
+  return (
+    <TrendCard title={title} detail={`Last ${period} days vs. the ${period} days before`}>
+      {visible.length === 0 ? (
+        <div className="mt-3 text-sm text-muted-foreground">No usage in this window.</div>
+      ) : (
+        <ul className="mt-2">
+          {visible.map((series) => {
+            const logoId = logoFor(series);
+            return (
+              <li key={series.key} className="flex items-center gap-3 border-t border-border/60 py-2.5 first:border-t-0">
+                <TrendLogo id={logoId} name={series.label} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium" title={series.label}>{series.label}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">{bylineFor(series)}</div>
+                </div>
+                {!compactView && series.current + series.previous > 0 && (
+                  <div className="w-16 shrink-0">
+                    <TrendSparkline current={series.currentDaily} previous={series.previousDaily} color={providerColor(logoId ?? series.key)} className="h-6" />
+                  </div>
+                )}
+                <div className="flex shrink-0 flex-col items-end gap-0.5">
+                  <span className="text-sm font-medium tabular-nums"><TrendAmount series={series} metric={metric} /></span>
+                  <TrendBadge direction={series.direction} label={trendBadgeLabel(series)} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {hidden > 0 && <div className="mt-1 text-[11px] text-muted-foreground">+{hidden} more with less usage</div>}
+    </TrendCard>
+  );
+}
+
+function mixBadgeLabel(item: TrendMixShift) {
+  if (item.direction === "new") return "New";
+  if (item.direction === "flat") return "Flat";
+  return formatSharePoints(item.deltaShare);
+}
+
+function TrendMix({ items, period, metric }: { items: TrendMixShift[]; period: TrendPeriod; metric: TrendMetric }) {
+  const metricLabel = metric === "cost" ? "cost" : "tokens";
+  return (
+    <TrendCard title="Model preference" detail={`Share of ${metricLabel} in the last ${period} days; the tick marks each model's share in the ${period} days before`}>
+      {items.length === 0 ? (
+        <div className="mt-3 text-sm text-muted-foreground">No usage in this window.</div>
+      ) : (
+        <ul className="mt-2">
+          {items.map((item) => {
+            const other = item.key === MIX_OTHER_KEY;
+            const logoId = other ? null : modelLogoId(item.label) ?? item.providerId;
+            return (
+              <li key={item.key} className="border-t border-border/60 py-2.5 first:border-t-0">
+                <div className="flex items-center gap-2.5">
+                  <TrendLogo id={logoId} name={item.label} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium" title={item.label}>
+                    {other ? `Other (${item.otherCount})` : item.label}
+                  </span>
+                  <span className="shrink-0 text-sm tabular-nums">{(item.currentShare * 100).toFixed(1)}%</span>
+                  <TrendBadge
+                    direction={item.direction}
+                    label={mixBadgeLabel(item)}
+                    title={item.direction === "new" ? undefined : `Was ${(item.previousShare * 100).toFixed(1)}% in the ${period} days before`}
+                  />
+                </div>
+                <div className="relative mt-2 h-1.5 overflow-visible rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                    style={{
+                      width: `${item.currentShare * 100}%`,
+                      minWidth: item.currentShare > 0 ? 3 : 0,
+                      backgroundColor: other ? "var(--muted-foreground)" : providerColor(logoId ?? item.key),
+                      opacity: other ? 0.5 : 1,
+                    }}
+                  />
+                  {item.previousShare > 0 && (
+                    <span
+                      className="absolute -top-0.5 h-2.5 w-0.5 rounded-full bg-foreground/60"
+                      style={{ left: `calc(${item.previousShare * 100}% - 1px)` }}
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+                <div className="mt-1.5 truncate text-[11px] text-muted-foreground">
+                  {other
+                    ? `${item.otherCount} smaller ${item.otherCount === 1 ? "model" : "models"} · ${item.agents.join(", ")}`
+                    : [item.providerName, item.agents.join(", ")].filter(Boolean).join(" · ")}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </TrendCard>
+  );
+}
+
+function UsageTrendsSection({ records, compactView, stackedView }: {
+  records: UsageRecord[];
+  compactView: boolean;
+  stackedView: boolean;
+}) {
+  const [period, setPeriod] = useState<TrendPeriod>(7);
+  const [metric, setMetric] = useState<TrendMetric>("tokens");
+  const trends = useMemo(() => buildUsageTrends(records, { period, metric }), [records, period, metric]);
+  if (trends.total.direction === "none") return null;
+  return (
+    <section aria-label="Usage trends" className="min-w-0">
+      <div className={compactView ? "space-y-2" : "flex flex-wrap items-center justify-between gap-x-4 gap-y-2"}>
+        <div className="mr-auto min-w-0">
+          <h2 className="text-sm font-semibold">Trends</h2>
+          <p className="text-xs text-muted-foreground">How usage and model choice moved over the last {period} days compared with the {period} days before.</p>
+        </div>
+        <div className={`flex items-center gap-2 ${compactView ? "w-full" : "flex-wrap"}`}>
+          <ToggleGroup
+            value={period}
+            onChange={setPeriod}
+            label="Trend period"
+            fill={compactView}
+            options={[{ value: 7, label: "7 days" }, { value: 30, label: "30 days" }]}
+          />
+          <ToggleGroup
+            value={metric}
+            onChange={setMetric}
+            label="Trend value"
+            fill={compactView}
+            options={[{ value: "tokens", label: "Tokens" }, { value: "cost", label: "Cost" }]}
+          />
+        </div>
+      </div>
+      <div className={`mt-3 grid gap-3 sm:gap-4 ${stackedView ? "" : "grid-cols-2"}`}>
+        <TrendOverview series={trends.total} period={period} metric={metric} />
+        <TrendMix items={trends.mix} period={period} metric={metric} />
+        <TrendList
+          title="By agent"
+          items={trends.agents}
+          metric={metric}
+          period={period}
+          compactView={compactView}
+          logoFor={(series) => series.agentId}
+          bylineFor={(series) => <TrendPreviousAmount series={series} metric={metric} />}
+        />
+        <TrendList
+          title="By model"
+          items={trends.models}
+          metric={metric}
+          period={period}
+          compactView={compactView}
+          logoFor={(series) => modelLogoId(series.label) ?? series.providerId}
+          bylineFor={(series) => [series.providerName, series.agents.join(", ")].filter(Boolean).join(" · ")}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -1278,6 +1608,13 @@ function UsageDashboard() {
       && (machine === "all" || row.machineId === machine));
   }, [data, machine, range]);
 
+  // Trends compare two equal windows ending today, so they read the full
+  // retained history rather than the range-bounded rows.
+  const trendRecords = useMemo(() => {
+    if (!data) return [];
+    return machine === "all" ? data.records : data.records.filter((row) => row.machineId === machine);
+  }, [data, machine]);
+
   const totals = useMemo(() => rows.reduce((sum, row) => ({
     cost: sum.cost + row.costUsd,
     unknownTokens: sum.unknownTokens + row.unknownPricedTokens,
@@ -1781,6 +2118,8 @@ function UsageDashboard() {
                 </div>
               )}
             </section>
+
+            <UsageTrendsSection records={trendRecords} compactView={compactView} stackedView={stackedView} />
             </>
             )}
 
