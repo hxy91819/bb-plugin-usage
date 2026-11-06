@@ -186,6 +186,14 @@
         "aggregateCommit": "4b382b89f48d46f16af98e3191fdf33be1d8498a"
       },
       "upstreamIssues": []
+    },
+    {
+      "branch": "feature/usage-trends",
+      "lastPackaged": {
+        "sourceCommit": "42655b9f17cd8d58015883fcbb3a6cdba25f630b",
+        "aggregateCommit": "6eda09ec7d3ef911fbd114fae84c198dbbf7f621"
+      },
+      "upstreamIssues": []
     }
   ]
 }

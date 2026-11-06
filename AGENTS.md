@@ -37,4 +37,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | fix/usage-skeleton-bars | 8944f59 | 35b9302 | [#83](https://github.com/MayankBansal12/bb-plugin-usage/pull/83) includes this change; [#89](https://github.com/MayankBansal12/bb-plugin-usage/pull/89) closed as consolidated |
 | fix/cursor-sdk-token-accounting | f3f3718 | 1766383 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
 | fix/dsh-v4-sessions | f2a3959 | 4b382b8 | Not submitted upstream |
+| feature/usage-trends | 42655b9 | 6eda09e | Not submitted upstream |
 <!-- open-source-fork-maintenance:end -->
