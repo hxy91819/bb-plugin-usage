@@ -132,6 +132,8 @@ Ideas, fixes, and improvements are welcome.
 
 ### Cost estimates and unknown pricing
 
+OpenAI model IDs with the transparent `codex/` routing prefix are grouped with their bare GPT model IDs and use the same catalog prices. Original event identities and account attribution remain unchanged; retained history is grouped immediately and repriced on the next successful sync.
+
 Recorded and unpriced requests are kept in separate aggregate buckets so a recorded cost never suppresses estimates for other requests. Known providers use only their own catalog rates; automatic model aliases are limited to date suffixes. Rows from providers the catalog does not list — typically proxy gateways reporting bare model names — instead resolve the model against first-party vendors, trying the full name before decorated variants such as `-high` or `-expires-on-…`, then a catalog-wide unique match. Unknown models remain unpriced. Costs, charts, and shares cover priced usage only. Catalog estimates use current base token rates, without context-tier adjustments or invoice reconciliation.
 
 ### Backlog / WIP

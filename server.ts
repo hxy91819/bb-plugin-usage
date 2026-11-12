@@ -1647,8 +1647,9 @@ function canonicalEventsSql() {
 // of it. This query only bounds retention -- it fetches one extra day of slack
 // and the dashboard applies the exact range in the viewer's timezone.
 export function dashboardRecordsSql() {
+  const modelId = "CASE WHEN model_provider_id='openai' AND model GLOB 'codex/gpt-*' AND instr(substr(model, 7), '/')=0 THEN substr(model, 7) ELSE model END";
   return `${canonicalEventsSql()} SELECT day, provider_id agentId, provider_name agentName,
-    model_provider_id modelProviderId, model_provider_name modelProviderName, machine_id machineId, model, project,
+    model_provider_id modelProviderId, model_provider_name modelProviderName, machine_id machineId, ${modelId} model, project,
     SUM(cost_usd) costUsd,
     SUM(CASE WHEN pricing_status='unknown' THEN processed_tokens ELSE 0 END) unknownPricedTokens,
     CASE WHEN COUNT(logged_cost_usd)=0 THEN NULL ELSE SUM(logged_cost_usd) END loggedCostUsd,
@@ -1663,7 +1664,7 @@ export function dashboardRecordsSql() {
     SUM(uncached_input_tokens) uncachedInputTokens, SUM(output_tokens) outputTokens
     FROM canonical WHERE day >= date('now', 'localtime', '-${DASHBOARD_HISTORY_DAYS} days')
     AND NOT (provider_id='claude' AND model='<synthetic>' AND processed_tokens=0)
-    GROUP BY day, provider_id, model_provider_id, machine_id, model, project ORDER BY day`;
+    GROUP BY day, provider_id, model_provider_id, machine_id, ${modelId}, project ORDER BY day`;
 }
 
 function abortableDelay(ms: number, signal: AbortSignal) {

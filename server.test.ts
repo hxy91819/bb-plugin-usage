@@ -2506,6 +2506,35 @@ describe("retained usage through the real sync path", () => {
   }
 
 
+  it("merges routed Codex models and reprices retained history without changing event identities", async () => {
+    setPricingCatalog(catalog(1000), "codex-model-prefix-v1");
+    const state = { rows: [piRow(), piRow({ model: "codex/gpt-test" }), piRow({ model: "other/gpt-test" }),
+      piRow({ model: "group/smart-split" })], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state, "codex");
+    try {
+      const keys = db.prepare("SELECT event_key FROM usage_events ORDER BY event_key").all();
+      db.prepare("UPDATE usage_events SET cost_usd=0, pricing_status='unknown' WHERE model='codex/gpt-test'").run();
+      const before = db.prepare(dashboardRecordsSql()).all();
+      expect(before).toEqual(expect.arrayContaining([
+        expect.objectContaining({ model: "gpt-test", processedTokens: 3000, unknownPricedTokens: 1500 }),
+        expect.objectContaining({ model: "other/gpt-test", processedTokens: 1500 }),
+        expect.objectContaining({ model: "group/smart-split", processedTokens: 1500 }),
+      ]));
+      expect(before).toHaveLength(3);
+      state.rows = [];
+      await syncAgain();
+      expect(db.prepare(dashboardRecordsSql()).all()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ model: "gpt-test", processedTokens: 3000, costUsd: 3, unknownPricedTokens: 0 }),
+      ]));
+      expect(db.prepare("SELECT event_key FROM usage_events ORDER BY event_key").all()).toEqual(keys);
+      state.rows = [piRow(), piRow({ model: "codex/gpt-test" }), piRow({ model: "other/gpt-test" }),
+        piRow({ model: "group/smart-split" })];
+      await syncAgain();
+      expect(db.prepare("SELECT SUM(processed_tokens) tokens FROM usage_events").get()).toEqual({ tokens: 6000 });
+      expect(db.prepare("SELECT event_key FROM usage_events ORDER BY event_key").all()).toEqual(keys);
+    } finally { db.close(); }
+  });
+
   afterEach(() => resetPricingCatalog());
   const totals = (db: Database) => db.prepare(`SELECT COUNT(*) count, SUM(processed_tokens) tokens,
     SUM(cost_usd) cost FROM usage_events`).get();
