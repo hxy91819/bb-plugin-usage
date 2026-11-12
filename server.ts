@@ -1647,7 +1647,10 @@ function canonicalEventsSql() {
 // of it. This query only bounds retention -- it fetches one extra day of slack
 // and the dashboard applies the exact range in the viewer's timezone.
 export function dashboardRecordsSql() {
-  const modelId = "CASE WHEN model_provider_id='openai' AND model GLOB 'codex/gpt-*' AND instr(substr(model, 7), '/')=0 THEN substr(model, 7) ELSE model END";
+  const modelName = "lower(trim(model))";
+  const routedModel = `CASE WHEN ${modelName} LIKE 'openai/%' THEN substr(${modelName}, 8) ELSE ${modelName} END`;
+  const modelId = `CASE WHEN model_provider_id='openai' AND (${routedModel}) GLOB 'codex/gpt-*'
+    AND instr(substr((${routedModel}), 7), '/')=0 THEN substr((${routedModel}), 7) ELSE model END`;
   return `${canonicalEventsSql()} SELECT day, provider_id agentId, provider_name agentName,
     model_provider_id modelProviderId, model_provider_name modelProviderName, machine_id machineId, ${modelId} model, project,
     SUM(cost_usd) costUsd,
