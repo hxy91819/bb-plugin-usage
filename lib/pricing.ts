@@ -62,9 +62,7 @@ export function normalizeProviderId(providerId: string) {
 function normalizedModelIds(providerId: string, model: string) {
   const normalized = model.trim().toLowerCase();
   const withoutProvider = normalized.startsWith(`${providerId}/`) ? normalized.slice(providerId.length + 1) : normalized;
-  const withoutCodex = providerId === "openai" && /^codex\/gpt-[^/]+$/.test(withoutProvider)
-    ? withoutProvider.slice(6) : withoutProvider;
-  return [...new Set([normalized, withoutProvider, withoutCodex])];
+  return [...new Set([normalized, withoutProvider])];
 }
 
 function toPrice(cost: ModelCost): Price | null {
@@ -164,6 +162,9 @@ function uniqueCatalogMatch(modelIds: string[]): PricingResult | null {
 
 export function resolvePricing(rawProviderId: string, model: string): PricingResult {
   const modelProviderId = normalizeProviderId(rawProviderId);
+  if (modelProviderId === "openai") {
+    model = model.trim().replace(/^(?:openai\/)?codex\/(gpt-[^/]+)$/i, (_match, id: string) => id.toLowerCase());
+  }
   const provider = activeProviders()[modelProviderId];
   if (provider) {
     const match = matchWithinProvider(modelProviderId, provider, model);
