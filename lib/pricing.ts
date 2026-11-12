@@ -62,7 +62,9 @@ export function normalizeProviderId(providerId: string) {
 function normalizedModelIds(providerId: string, model: string) {
   const normalized = model.trim().toLowerCase();
   const withoutProvider = normalized.startsWith(`${providerId}/`) ? normalized.slice(providerId.length + 1) : normalized;
-  return [...new Set([normalized, withoutProvider])];
+  const withoutCodex = providerId === "openai" && /^codex\/gpt-[^/]+$/.test(withoutProvider)
+    ? withoutProvider.slice(6) : withoutProvider;
+  return [...new Set([normalized, withoutProvider, withoutCodex])];
 }
 
 function toPrice(cost: ModelCost): Price | null {
