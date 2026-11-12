@@ -38,4 +38,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | fix/cursor-sdk-token-accounting | f3f3718 | 1766383 | [#86](https://github.com/MayankBansal12/bb-plugin-usage/pull/86) |
 | fix/dsh-v4-sessions | f2a3959 | 4b382b8 | Not submitted upstream |
 | feature/usage-trends | 42655b9 | 6eda09e | Not submitted upstream |
+| fix/codex-routing-model-prefix | b99dc05 | b703300 | Not submitted upstream |
 <!-- open-source-fork-maintenance:end -->
