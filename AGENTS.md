@@ -39,4 +39,5 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | fix/dsh-v4-sessions | f2a3959 | 4b382b8 | Not submitted upstream |
 | feature/usage-trends | 42655b9 | 6eda09e | Not submitted upstream |
 | fix/codex-routing-model-prefix | b99dc05 | b703300 | Not submitted upstream |
+| fix/hono-4.13.16 | 9c6e5a4 | 5398129 | [#96](https://github.com/MayankBansal12/bb-plugin-usage/pull/96) |
 <!-- open-source-fork-maintenance:end -->

@@ -202,6 +202,14 @@
         "aggregateCommit": "b703300c8a870c61dfde8b0088a755c7452ae113"
       },
       "upstreamIssues": []
+    },
+    {
+      "branch": "fix/hono-4.13.16",
+      "lastPackaged": {
+        "sourceCommit": "9c6e5a4ef51803d365eb6d957613f8a51566bbff",
+        "aggregateCommit": "53981291907afe215154d729fcf415c04215efd8"
+      },
+      "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 96, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/96" }]
     }
   ]
 }
