@@ -90,7 +90,8 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // token_count records, and key buckets by the rollout's own session.
   // Other agents retain their existing versions; adding Copilot must not
   // force users without Copilot to reparse unrelated session logs.
-  const cacheVersion = input.agentId === "copilot" || input.agentId === "codex" || input.agentId === "antigravity" ? 7
+  const cacheVersion = input.agentId === "antigravity" ? 8
+    : input.agentId === "copilot" || input.agentId === "codex" ? 7
     : input.agentId === "dsh" ? 6 : 5;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "copilot", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
   if (!allowedAgents.has(input.agentId)) throw new Error("Unsupported usage agent.");
@@ -596,15 +597,15 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
           const usageDay = day(value.created_at);
           if (!usageDay) continue;
           const rawModel = text(value.model ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined), "unknown");
-          const inputTokens = count(value.input_tokens);
-          const cached = Math.min(inputTokens, count(value.cache_read_tokens));
+          const uncached = count(value.input_tokens);
+          const cached = count(value.cache_read_tokens);
           add(rows, {
             day: usageDay,
             modelProviderId: inferAgyProvider(rawModel),
             model: rawModel,
             project: getAgyProject(filePath),
             loggedCostUsd: null,
-            uncachedInputTokens: inputTokens - cached,
+            uncachedInputTokens: uncached,
             cachedInputTokens: cached,
             cacheWriteTokens: 0,
             outputTokens: count(value.output_tokens),

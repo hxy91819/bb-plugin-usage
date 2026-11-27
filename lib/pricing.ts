@@ -43,6 +43,25 @@ const builtinPrices: Record<string, { name?: string; models: Record<string, Pric
     name: "Thaura",
     models: { thaura: { input: 0.5, cached: 0.5, cacheWrite: 0.5, output: 2 } },
   },
+  google: {
+    name: "Google",
+    models: {
+      "gemini-3": { input: 0.5, cached: 0.05, cacheWrite: 0.5, output: 3 },
+      "gemini-3-flash": { input: 0.5, cached: 0.05, cacheWrite: 0.5, output: 3 },
+      "gemini-3.8-flash": { input: 0.5, cached: 0.05, cacheWrite: 0.5, output: 3 },
+      "gemini-3.8-flash-lite": { input: 0.25, cached: 0.025, cacheWrite: 0.25, output: 1.5 },
+      "gemini-4-carbon": { input: 2, cached: 0.2, cacheWrite: 2, output: 12 },
+      "gemini-4-hydrogen": { input: 1, cached: 0.1, cacheWrite: 1, output: 6 },
+      "gemini-4-neon": { input: 3, cached: 0.3, cacheWrite: 3, output: 18 },
+    },
+  },
+  anthropic: {
+    name: "Anthropic",
+    models: {
+      "claude-opus-5-5": { input: 5, cached: 0.5, cacheWrite: 6.25, output: 25 },
+      "claude-opus-4": { input: 5, cached: 0.5, cacheWrite: 6.25, output: 25 },
+    },
+  },
 };
 
 export function pricingRevision() {
@@ -168,9 +187,19 @@ export function resolvePricing(rawProviderId: string, model: string): PricingRes
     if (match) return match;
   }
 
-  const builtin = builtinPrices[modelProviderId]?.models[model.trim().toLowerCase()];
-  if (builtin) {
-    return { modelProviderId, modelProviderName: providerName(modelProviderId, provider) || builtinPrices[modelProviderId]!.name!, price: builtin, status: "models-dev-exact" };
+  const builtinProvider = builtinPrices[modelProviderId];
+  if (builtinProvider) {
+    for (const candidateId of proxyModelIds(modelProviderId, model)) {
+      const match = builtinProvider.models[candidateId];
+      if (match) {
+        return {
+          modelProviderId,
+          modelProviderName: providerName(modelProviderId, provider) || builtinProvider.name!,
+          price: { ...match },
+          status: candidateId === model.trim().toLowerCase() ? "models-dev-exact" : "models-dev-alias",
+        };
+      }
+    }
   }
 
   // Explicit providers must never inherit a different vendor's rates.

@@ -125,4 +125,11 @@ describe("proxy provider fallback", () => {
     expect(resolvePricing("cliproxy", "gpt-5.6-terra-high")).toMatchObject({ modelProviderId: "openai", status: "models-dev-alias", price: { input: 2 } });
     expect(priceFor("cliproxy", "swe-2-max")).toBeNull();
   });
+
+  it("resolves builtin Google and Anthropic models with effort suffixes", () => {
+    expect(resolvePricing("google", "gemini-3.8-flash")).toMatchObject({ modelProviderId: "google", status: "models-dev-exact", price: { input: 0.5, cached: 0.05, output: 3 } });
+    expect(resolvePricing("google", "gemini-3.8-flash-high")).toMatchObject({ modelProviderId: "google", status: "models-dev-alias", price: { input: 0.5, cached: 0.05, output: 3 } });
+    expect(resolvePricing("google", "gemini-4-carbon-medium")).toMatchObject({ modelProviderId: "google", status: "models-dev-alias", price: { input: 2, cached: 0.2, output: 12 } });
+    expect(resolvePricing("anthropic", "claude-opus-5-5-medium")).toMatchObject({ modelProviderId: "anthropic", status: "models-dev-alias", price: { input: 5, cached: 0.5, output: 25 } });
+  });
 });
