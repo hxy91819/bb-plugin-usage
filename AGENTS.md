@@ -40,4 +40,6 @@ Use `$open-source-fork-maintenance` before upstream synchronization, aggregate r
 | feature/usage-trends | 42655b9 | 6eda09e | Not submitted upstream |
 | fix/codex-routing-model-prefix | b99dc05 | b703300 | Not submitted upstream |
 | fix/hono-4.13.16 | 9c6e5a4 | 5398129 | [#96](https://github.com/MayankBansal12/bb-plugin-usage/pull/96) |
+| fix/local-currency-offline-test | 922e0ec | d72b67c | Not submitted upstream |
+| feature/antigravity-usage | 40e399b | b966016 | Not submitted upstream |
 <!-- open-source-fork-maintenance:end -->

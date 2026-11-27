@@ -210,6 +210,22 @@
         "aggregateCommit": "53981291907afe215154d729fcf415c04215efd8"
       },
       "upstreamIssues": [{ "repository": "MayankBansal12/bb-plugin-usage", "number": 96, "feedbackUrl": "https://github.com/MayankBansal12/bb-plugin-usage/pull/96" }]
+    },
+    {
+      "branch": "fix/local-currency-offline-test",
+      "lastPackaged": {
+        "sourceCommit": "922e0ecc33704b8afba307592f8ddfc1a13968c6",
+        "aggregateCommit": "d72b67ce9460741f63e8bced2c635e4664ba73e5"
+      },
+      "upstreamIssues": []
+    },
+    {
+      "branch": "feature/antigravity-usage",
+      "lastPackaged": {
+        "sourceCommit": "40e399baa2e914298329d4afb26f497b4d159b8e",
+        "aggregateCommit": "b9660167432c3b1a566be5902aa9bc844dfc528a"
+      },
+      "upstreamIssues": []
     }
   ]
 }
