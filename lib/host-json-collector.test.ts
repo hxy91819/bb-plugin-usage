@@ -58,7 +58,7 @@ describe("host JSON usage collector", () => {
     ["codex", "rollout-cached.jsonl", 9], ["claude", "session.jsonl", 5],
     ["dsh", "session.v3.jsonl.zstd", 6], ["fx", "usage.jsonl", 5],
     ["grok", "unified.jsonl", 5], ["pi", "session.jsonl", 5],
-    ["prime", "session.jsonl", 5], ["antigravity", "usage.jsonl", 5],
+    ["prime", "session.jsonl", 5], ["antigravity", "usage.jsonl", 7],
     ["thaura", "usage.jsonl", 5],
   ] as const)("preserves the existing %s cache when Copilot collection is added", async (agentId, fileName, version) => {
     const directory = await temporaryDirectory();
@@ -623,6 +623,107 @@ describe("host JSON usage collector", () => {
     })]);
 
     const second = await scan("antigravity", root, cachePath);
+    expect(second).toMatchObject({ fileCount: 1, changedFileCount: 0, reusedFileCount: 1, failureCount: 0 });
+    expect(second.rows).toEqual(first.rows);
+  });
+
+  it("streams Antigravity's native brain transcript logs and resolves project from metadata", async () => {
+    const directory = await temporaryDirectory();
+    const brainDir = join(directory, "brain", "conv-123", ".system_generated", "logs");
+    const transcriptPath = join(brainDir, "transcript.jsonl");
+    const cacheDir = join(directory, "cache");
+    const metadataPath = join(cacheDir, "conversation_metadata.json");
+    const collectorCache = join(directory, "collector-cache", "antigravity.json");
+
+    await mkdir(brainDir, { recursive: true });
+    await mkdir(cacheDir, { recursive: true });
+
+    await writeFile(metadataPath, JSON.stringify({
+      conversations: {
+        "conv-123": {
+          summary: {
+            WorkspaceURIs: ["file:///data/code/my-cool-project"],
+          },
+        },
+      },
+    }));
+
+    await writeFile(transcriptPath, [
+      {
+        message_id: "msg-1",
+        role: "assistant",
+        created_at: "2026-08-09T00:00:00Z",
+        source: "MODEL",
+        model: "gemini-3.8-flash-high",
+        input_tokens: 5000,
+        output_tokens: 200,
+        cache_read_tokens: 3000,
+      },
+      {
+        type: "PLANNER_RESPONSE",
+        role: "assistant",
+        created_at: "2026-08-09T00:01:00Z",
+        model: "claude-opus-5-5-medium",
+        input_tokens: 10000,
+        output_tokens: 500,
+        cache_read_tokens: 8000,
+      },
+      {
+        role: "user",
+        created_at: "2026-08-09T00:02:00Z",
+        content: "hello",
+      },
+      {
+        source: "USER_EXPLICIT",
+        created_at: "2026-08-09T00:02:30Z",
+        content: "The user changed setting `Model Selection` from None to Gemini 4 Carbon (Medium).",
+      },
+      {
+        type: "PLANNER_RESPONSE",
+        role: "assistant",
+        created_at: "2026-08-09T00:03:00Z",
+        input_tokens: 3000,
+        output_tokens: 150,
+        cache_read_tokens: 2000,
+      },
+    ].map((value) => JSON.stringify(value)).join("\n"));
+
+    const first = await scan("antigravity", join(directory, "brain"), collectorCache);
+    expect(first).toMatchObject({ fileCount: 1, changedFileCount: 1, reusedFileCount: 0, failureCount: 0 });
+    expect(first.rows).toEqual([
+      expect.objectContaining({
+        day: localDay("2026-08-09T00:01:00Z"),
+        modelProviderId: "anthropic",
+        model: "claude-opus-5-5-medium",
+        project: "my-cool-project",
+        uncachedInputTokens: 2000,
+        cachedInputTokens: 8000,
+        cacheWriteTokens: 0,
+        outputTokens: 500,
+      }),
+      expect.objectContaining({
+        day: localDay("2026-08-09T00:00:00Z"),
+        modelProviderId: "google",
+        model: "gemini-3.8-flash-high",
+        project: "my-cool-project",
+        uncachedInputTokens: 2000,
+        cachedInputTokens: 3000,
+        cacheWriteTokens: 0,
+        outputTokens: 200,
+      }),
+      expect.objectContaining({
+        day: localDay("2026-08-09T00:03:00Z"),
+        modelProviderId: "google",
+        model: "gemini-4-carbon-medium",
+        project: "my-cool-project",
+        uncachedInputTokens: 1000,
+        cachedInputTokens: 2000,
+        cacheWriteTokens: 0,
+        outputTokens: 150,
+      }),
+    ]);
+
+    const second = await scan("antigravity", join(directory, "brain"), collectorCache);
     expect(second).toMatchObject({ fileCount: 1, changedFileCount: 0, reusedFileCount: 1, failureCount: 0 });
     expect(second.rows).toEqual(first.rows);
   });

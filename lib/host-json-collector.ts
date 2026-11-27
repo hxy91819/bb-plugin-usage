@@ -104,7 +104,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // Other agents retain their existing versions; adding Copilot must not
   // force users without Copilot to reparse unrelated session logs.
   const cacheVersion = input.agentId === "cursor" ? 10 : input.agentId === "codex" ? 9
-    : input.agentId === "copilot" ? 7 : input.agentId === "dsh" ? 6 : 5;
+    : input.agentId === "copilot" ? 7 : input.agentId === "dsh" ? 6 : input.agentId === "antigravity" ? 7 : 5;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "codebuddy", "cursor", "copilot", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
   if (!allowedAgents.has(input.agentId)) throw new Error("Unsupported usage agent.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.sinceDay)) throw new Error("Invalid usage history boundary.");
@@ -262,7 +262,8 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
     if (input.agentId === "codex") return name.startsWith("rollout-") && name.endsWith(".jsonl");
     if (input.agentId === "dsh") return name === "session.v3.jsonl.zstd" || name === "session.v4.jsonl.zstd";
     if (input.agentId === "copilot") return name === "events.jsonl";
-    if (input.agentId === "fx" || input.agentId === "antigravity" || input.agentId === "thaura") return name === "usage.jsonl";
+    if (input.agentId === "antigravity") return name === "transcript.jsonl" || name === "usage.jsonl";
+    if (input.agentId === "fx" || input.agentId === "thaura") return name === "usage.jsonl";
     if (input.agentId === "grok") return name === "unified.jsonl";
     return name.endsWith(".jsonl");
   }
@@ -371,6 +372,44 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
     return usage;
   }
 
+  const agyMetadataCache = new Map<string, Record<string, string>>();
+  function inferAgyProvider(modelName: string): string {
+    const lower = modelName.toLowerCase();
+    if (lower.startsWith("claude")) return "anthropic";
+    if (lower.startsWith("gpt") || lower.startsWith("o1") || lower.startsWith("o3") || lower.startsWith("o4")) return "openai";
+    if (lower.startsWith("gemini")) return "google";
+    if (lower.startsWith("deepseek")) return "deepseek";
+    if (lower.startsWith("grok")) return "xai";
+    return "google";
+  }
+
+  function getAgyProject(transcriptPath: string): string {
+    try {
+      const convId = path.basename(path.resolve(transcriptPath, "../../.."));
+      const cliDir = path.resolve(transcriptPath, "../../../../..");
+      const metaPath = path.join(cliDir, "cache", "conversation_metadata.json");
+      let mapping = agyMetadataCache.get(metaPath);
+      if (!mapping) {
+        mapping = {};
+        if (fs.existsSync(metaPath)) {
+          const raw = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+          const convs = object(raw?.conversations);
+          if (convs) {
+            for (const [id, item] of Object.entries(convs)) {
+              const summary = object((item as Record<string, unknown>)?.summary);
+              const uris = Array.isArray(summary?.WorkspaceURIs) ? summary.WorkspaceURIs : [];
+              const firstUri = typeof uris[0] === "string" ? uris[0] : "";
+              if (firstUri) mapping[id] = firstUri.replace(/^file:\/\//, "");
+            }
+          }
+        }
+        agyMetadataCache.set(metaPath, mapping);
+      }
+      if (mapping[convId]) return projectName(mapping[convId]);
+    } catch {}
+    return "Unknown";
+  }
+
   async function parseFile(filePath: string): Promise<CachedUsageRow[]> {
     const rows = new Map<string, HostUsageAggregate>();
     const events = new Map<string, CachedUsageRow>();
@@ -404,6 +443,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
     // boundary is known.
     let dshSeeded = false;
     let dshEndSeedSeq = -1;
+    let currentAgyModel = "unknown";
     type DshSettlement = { seq: number; turn: number; step: number; row: HostUsageAggregate };
     const dshSettlements: DshSettlement[] = [];
     // Samples within one attempt replace each other; a retry closes that slot.
@@ -588,27 +628,63 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
       }
 
       if (input.agentId === "antigravity") {
-        // Written by bb-plugin-antigravity-acp's provider bridge, one line
-        // per turn it forwards to the local `agy` CLI (agy has no session
-        // log of its own in this shape — the bridge is the source of truth).
-        if (value.kind !== "generation") continue;
-        const fact = object(value.fact);
-        const usageDay = day(fact?.created_at_ms);
-        if (!fact || !usageDay) continue;
-        const inputTokens = count(fact.input_tokens);
-        const cached = Math.min(inputTokens, count(fact.cache_read_tokens));
-        add(rows, {
-          day: usageDay,
-          modelProviderId: text(fact.provider, "google"),
-          model: text(fact.model, "unknown"),
-          project: projectName(fact.cwd ?? fact.workspace ?? value.cwd),
-          loggedCostUsd: finite(fact.total_cost),
-          uncachedInputTokens: inputTokens - cached,
-          cachedInputTokens: cached,
-          cacheWriteTokens: 0,
-          outputTokens: count(fact.output_tokens),
-        });
-        continue;
+        if (typeof value.model === "string" && value.model.trim()) {
+          currentAgyModel = value.model.trim();
+        } else if (typeof value.content === "string") {
+          const match = /Model Selection` from .*? to (.*?)\./.exec(value.content);
+          if (match?.[1]) {
+            currentAgyModel = match[1]
+              .trim()
+              .toLowerCase()
+              .replace(/\s*\((.*?)\)/g, "-$1")
+              .replace(/\s+/g, "-");
+          }
+        }
+
+        if (value.kind === "generation") {
+          // Written by bb-plugin-antigravity-acp's provider bridge, one line
+          // per turn it forwards to the local `agy` CLI (agy has no session
+          // log of its own in this shape — the bridge is the source of truth).
+          const fact = object(value.fact);
+          const usageDay = day(fact?.created_at_ms);
+          if (!fact || !usageDay) continue;
+          const rawModel = text(fact.model, "unknown");
+          const inputTokens = count(fact.input_tokens);
+          const cached = Math.min(inputTokens, count(fact.cache_read_tokens));
+          add(rows, {
+            day: usageDay,
+            modelProviderId: text(fact.provider, inferAgyProvider(rawModel)),
+            model: rawModel,
+            project: projectName(fact.cwd ?? fact.workspace ?? value.cwd),
+            loggedCostUsd: finite(fact.total_cost),
+            uncachedInputTokens: inputTokens - cached,
+            cachedInputTokens: cached,
+            cacheWriteTokens: 0,
+            outputTokens: count(fact.output_tokens),
+          });
+          continue;
+        }
+
+        // Native Antigravity CLI transcript.jsonl log format
+        if (value.type === "PLANNER_RESPONSE" || (value.source === "MODEL" && value.input_tokens !== undefined)) {
+          const usageDay = day(value.created_at);
+          if (!usageDay) continue;
+          const rawModel = text(value.model ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined), "unknown");
+          const inputTokens = count(value.input_tokens);
+          const cached = Math.min(inputTokens, count(value.cache_read_tokens));
+          add(rows, {
+            day: usageDay,
+            modelProviderId: inferAgyProvider(rawModel),
+            model: rawModel,
+            project: getAgyProject(filePath),
+            loggedCostUsd: null,
+            uncachedInputTokens: inputTokens - cached,
+            cachedInputTokens: cached,
+            cacheWriteTokens: 0,
+            outputTokens: count(value.output_tokens),
+          });
+          continue;
+        }
       }
 
       if (input.agentId === "thaura") {
