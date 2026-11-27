@@ -40,6 +40,7 @@ type CollectorDependencies = {
   crypto: typeof import("node:crypto");
   readline: typeof import("node:readline");
   zlib: typeof import("node:zlib");
+  loadSqlite?: () => typeof import("node:sqlite");
 };
 
 const SCAN_BEGIN = "__BB_USAGE_SCAN_BEGIN__";
@@ -69,7 +70,7 @@ const scanResultSchema = z.object({
 // This function is compiled by generate:collectors and executed on the host. Keep
 // every runtime dependency inside the function or pass it through `dependencies`.
 async function hostJsonCollector(encodedInput: string, dependencies: CollectorDependencies) {
-  const { buffer, fs, path, crypto, readline, zlib } = dependencies;
+  const { buffer, fs, path, crypto, readline, zlib, loadSqlite } = dependencies;
   // v2: retained hashed Claude response identities so repeated transcript rows
   // and copied/forked transcripts can be deduplicated before aggregation.
   // v3: added the per-session project label to every aggregate row.
@@ -90,7 +91,10 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // token_count records, and key buckets by the rollout's own session.
   // Other agents retain their existing versions; adding Copilot must not
   // force users without Copilot to reparse unrelated session logs.
-  const cacheVersion = input.agentId === "antigravity" ? 9
+  // v10 (antigravity): read token usage and model enum from conversations/<id>.db
+  // steps.metadata when transcript.jsonl PLANNER_RESPONSE omits token fields, and
+  // preserve decimal model names in Model Selection lines.
+  const cacheVersion = input.agentId === "antigravity" ? 10
     : input.agentId === "copilot" || input.agentId === "codex" ? 7
     : input.agentId === "dsh" ? 6 : 5;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "copilot", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
@@ -337,6 +341,130 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   }
 
   const agyMetadataCache = new Map<string, Record<string, string>>();
+  const agyModelEnumMap: Record<number, string> = {
+    1318: "gemini-3.8-flash",
+    1319: "gemini-3.8-flash",
+    1320: "gemini-3.8-flash",
+    1401: "claude-opus-5-5",
+    1437: "gemini-4-carbon",
+    1526: "gemini-4-hydrogen",
+    1532: "gemini-4-neon",
+    1533: "gemini-4-neon",
+    1535: "gemini-4-neon",
+  };
+  type AgyStepDbUsage = {
+    modelEnum?: number;
+    inputTokens: number;
+    cacheReadTokens: number;
+    outputTokens: number;
+  };
+  function agyConversationDbPath(transcriptPath: string): string | null {
+    if (path.basename(transcriptPath) !== "transcript.jsonl") return null;
+    const convId = path.basename(path.resolve(transcriptPath, "../../.."));
+    if (!convId) return null;
+    const cliDir = path.resolve(transcriptPath, "../../../../..");
+    return path.join(cliDir, "conversations", `${convId}.db`);
+  }
+  function decodeProtoVarint(buf: Uint8Array, start: number): [number, number] | null {
+    let val = 0;
+    let factor = 1;
+    let pos = start;
+    while (pos < buf.length && pos < start + 10) {
+      const byte = buf[pos++]!;
+      val += (byte & 0x7f) * factor;
+      if ((byte & 0x80) === 0) return [val, pos];
+      factor *= 128;
+    }
+    return null;
+  }
+  function parseAgyStepMetadataUsage(buf: Uint8Array): AgyStepDbUsage | null {
+    let pos = 0;
+    while (pos < buf.length) {
+      const tagRes = decodeProtoVarint(buf, pos);
+      if (!tagRes) return null;
+      const [tag, nextPos] = tagRes;
+      pos = nextPos;
+      const field = Math.floor(tag / 8);
+      const wire = tag & 7;
+      if (wire === 0) {
+        const v = decodeProtoVarint(buf, pos);
+        if (!v) return null;
+        pos = v[1];
+      } else if (wire === 2) {
+        const lenRes = decodeProtoVarint(buf, pos);
+        if (!lenRes) return null;
+        const [len, dataStart] = lenRes;
+        const dataEnd = dataStart + len;
+        if (dataEnd > buf.length) return null;
+        if (field === 9) {
+          let subPos = dataStart;
+          let modelEnum: number | undefined;
+          let inputTokens = 0;
+          let cacheReadTokens = 0;
+          let outputTokens = 0;
+          while (subPos < dataEnd) {
+            const subTag = decodeProtoVarint(buf, subPos);
+            if (!subTag) break;
+            const [sTag, sNext] = subTag;
+            subPos = sNext;
+            const sField = Math.floor(sTag / 8);
+            const sWire = sTag & 7;
+            if (sWire === 0) {
+              const sVal = decodeProtoVarint(buf, subPos);
+              if (!sVal) break;
+              subPos = sVal[1];
+              if (sField === 1) modelEnum = sVal[0];
+              else if (sField === 2) inputTokens = sVal[0];
+              else if (sField === 3) outputTokens = sVal[0];
+              else if (sField === 5) cacheReadTokens = sVal[0];
+            } else if (sWire === 2) {
+              const sLen = decodeProtoVarint(buf, subPos);
+              if (!sLen) break;
+              subPos = sLen[1] + sLen[0];
+            } else if (sWire === 1) {
+              subPos += 8;
+            } else if (sWire === 5) {
+              subPos += 4;
+            } else {
+              break;
+            }
+          }
+          return { modelEnum, inputTokens, cacheReadTokens, outputTokens };
+        }
+        pos = dataEnd;
+      } else if (wire === 1) {
+        pos += 8;
+      } else if (wire === 5) {
+        pos += 4;
+      } else {
+        return null;
+      }
+    }
+    return null;
+  }
+  function readAgyConversationUsage(transcriptPath: string): Map<number, AgyStepDbUsage> | null {
+    if (!loadSqlite) return null;
+    const dbPath = agyConversationDbPath(transcriptPath);
+    if (!dbPath || !fs.existsSync(dbPath)) return null;
+    let db: { prepare: (sql: string) => { all: () => unknown[] }; close: () => void } | undefined;
+    try {
+      const { DatabaseSync } = loadSqlite();
+      db = new DatabaseSync(dbPath, { readOnly: true }) as unknown as typeof db;
+      const rows = db!.prepare("SELECT idx, metadata FROM steps WHERE step_type = 15 AND metadata IS NOT NULL").all() as Array<{ idx?: unknown; metadata?: unknown }>;
+      const map = new Map<number, AgyStepDbUsage>();
+      for (const row of rows) {
+        const idx = finite(row.idx);
+        if (idx === null || !(row.metadata instanceof Uint8Array)) continue;
+        const parsed = parseAgyStepMetadataUsage(row.metadata);
+        if (parsed) map.set(idx, parsed);
+      }
+      return map;
+    } catch {
+      return null;
+    } finally {
+      try { db?.close(); } catch {}
+    }
+  }
   function inferAgyProvider(modelName: string): string {
     const lower = modelName.toLowerCase();
     if (lower.startsWith("claude")) return "anthropic";
@@ -415,6 +543,8 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
     let dshSeeded = false;
     let dshEndSeedSeq = -1;
     let currentAgyModel = "unknown";
+    let agyDbUsageLoaded = false;
+    let agyDbUsage: Map<number, AgyStepDbUsage> | null = null;
     type DshSettlement = { seq: number; turn: number; step: number; row: HostUsageAggregate };
     const dshSettlements: DshSettlement[] = [];
     // Samples within one attempt replace each other; a retry closes that slot.
@@ -567,7 +697,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
         if (typeof value.model === "string" && value.model.trim()) {
           currentAgyModel = normalizeAgyModel(value.model);
         } else if (typeof value.content === "string") {
-          const match = /Model Selection` from .*? to (.*?)\./.exec(value.content);
+          const match = /Model Selection` from .*? to ([^\n]+?)\.(?:\s|$)/.exec(value.content);
           if (match?.[1]) {
             currentAgyModel = normalizeAgyModel(match[1]);
           }
@@ -601,9 +731,29 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
         if (value.type === "PLANNER_RESPONSE" || (value.source === "MODEL" && value.input_tokens !== undefined)) {
           const usageDay = day(value.created_at);
           if (!usageDay) continue;
-          const rawModel = normalizeAgyModel(text(value.model ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined), "unknown"));
-          const uncached = count(value.input_tokens);
-          const cached = count(value.cache_read_tokens);
+          const hasInlineTokens = value.input_tokens !== undefined
+            || value.cache_read_tokens !== undefined
+            || value.output_tokens !== undefined;
+          let dbEntry: AgyStepDbUsage | undefined;
+          if (!hasInlineTokens) {
+            if (!agyDbUsageLoaded) {
+              agyDbUsageLoaded = true;
+              agyDbUsage = readAgyConversationUsage(filePath);
+            }
+            const stepIdx = finite(value.step_index);
+            if (stepIdx !== null && agyDbUsage) {
+              dbEntry = agyDbUsage.get(stepIdx);
+            }
+          }
+          const enumModel = dbEntry?.modelEnum !== undefined ? agyModelEnumMap[dbEntry.modelEnum] : undefined;
+          const rawModel = normalizeAgyModel(text(
+            value.model ?? enumModel ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined),
+            "unknown",
+          ));
+          const uncached = hasInlineTokens ? count(value.input_tokens) : count(dbEntry?.inputTokens);
+          const cached = hasInlineTokens ? count(value.cache_read_tokens) : count(dbEntry?.cacheReadTokens);
+          const output = hasInlineTokens ? count(value.output_tokens) : count(dbEntry?.outputTokens);
+          if (uncached + cached + output === 0) continue;
           add(rows, {
             day: usageDay,
             modelProviderId: inferAgyProvider(rawModel),
@@ -613,7 +763,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
             uncachedInputTokens: uncached,
             cachedInputTokens: cached,
             cacheWriteTokens: 0,
-            outputTokens: count(value.output_tokens),
+            outputTokens: output,
           });
           continue;
         }
@@ -808,7 +958,20 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
       if (seenFiles.has(fileIdentity)) continue;
       seenFiles.add(fileIdentity);
       fileCount += 1;
-      const signature = `${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+      let signature = `${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+      if (input.agentId === "antigravity") {
+        const dbPath = agyConversationDbPath(filePath);
+        if (dbPath) {
+          try {
+            const dbStat = await fs.promises.stat(dbPath);
+            signature += `:db=${dbStat.size}:${Math.trunc(dbStat.mtimeMs)}`;
+          } catch {}
+          try {
+            const walStat = await fs.promises.stat(`${dbPath}-wal`);
+            signature += `:wal=${walStat.size}:${Math.trunc(walStat.mtimeMs)}`;
+          } catch {}
+        }
+      }
       if (prior?.signature === signature && Array.isArray(prior.rows) && prior.rows.every(validRow)) {
         nextFiles[sourceId] = prior;
         for (const row of prior.rows) row.eventKey ? mergeEvent(allEvents, row) : add(allRows, row);
@@ -872,7 +1035,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
 
 export function hostJsonCollectorScript(input: HostJsonScanInput) {
   const encodedInput = Buffer.from(JSON.stringify(input)).toString("base64");
-  const dependencies = "{buffer:require('node:buffer').Buffer,fs:require('node:fs'),path:require('node:path'),crypto:require('node:crypto'),readline:require('node:readline'),zlib:require('node:zlib')}";
+  const dependencies = "{buffer:require('node:buffer').Buffer,fs:require('node:fs'),path:require('node:path'),crypto:require('node:crypto'),readline:require('node:readline'),zlib:require('node:zlib'),loadSqlite:function(){return require('node:sqlite');}}";
   return `(${hostJsonCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__BB_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
 }
 
