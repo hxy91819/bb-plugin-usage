@@ -104,7 +104,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // Other agents retain their existing versions; adding Copilot must not
   // force users without Copilot to reparse unrelated session logs.
   const cacheVersion = input.agentId === "cursor" ? 10 : input.agentId === "codex" ? 9
-    : input.agentId === "copilot" ? 7 : input.agentId === "dsh" ? 6 : input.agentId === "antigravity" ? 8 : 5;
+    : input.agentId === "copilot" ? 7 : input.agentId === "dsh" ? 6 : input.agentId === "antigravity" ? 9 : 5;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "codebuddy", "cursor", "copilot", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
   if (!allowedAgents.has(input.agentId)) throw new Error("Unsupported usage agent.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.sinceDay)) throw new Error("Invalid usage history boundary.");
@@ -383,6 +383,15 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
     return "google";
   }
 
+  function normalizeAgyModel(rawModel: string): string {
+    let cleaned = rawModel.trim();
+    cleaned = cleaned.replace(/\s*\((?:low|medium|high|xhigh|max|none|default)\)/gi, "");
+    cleaned = cleaned.toLowerCase().replace(/\s+/g, "-");
+    cleaned = cleaned.replace(/-(?:low|medium|high|xhigh|max)$/i, "");
+    if (cleaned === "claude-opus-5") cleaned = "claude-opus-5-5";
+    return cleaned || "unknown";
+  }
+
   function getAgyProject(transcriptPath: string): string {
     try {
       const convId = path.basename(path.resolve(transcriptPath, "../../.."));
@@ -629,15 +638,11 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
 
       if (input.agentId === "antigravity") {
         if (typeof value.model === "string" && value.model.trim()) {
-          currentAgyModel = value.model.trim();
+          currentAgyModel = normalizeAgyModel(value.model);
         } else if (typeof value.content === "string") {
           const match = /Model Selection` from .*? to (.*?)\./.exec(value.content);
           if (match?.[1]) {
-            currentAgyModel = match[1]
-              .trim()
-              .toLowerCase()
-              .replace(/\s*\((.*?)\)/g, "-$1")
-              .replace(/\s+/g, "-");
+            currentAgyModel = normalizeAgyModel(match[1]);
           }
         }
 
@@ -648,7 +653,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
           const fact = object(value.fact);
           const usageDay = day(fact?.created_at_ms);
           if (!fact || !usageDay) continue;
-          const rawModel = text(fact.model, "unknown");
+          const rawModel = normalizeAgyModel(text(fact.model, "unknown"));
           const inputTokens = count(fact.input_tokens);
           const cached = Math.min(inputTokens, count(fact.cache_read_tokens));
           add(rows, {
@@ -669,7 +674,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
         if (value.type === "PLANNER_RESPONSE" || (value.source === "MODEL" && value.input_tokens !== undefined)) {
           const usageDay = day(value.created_at);
           if (!usageDay) continue;
-          const rawModel = text(value.model ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined), "unknown");
+          const rawModel = normalizeAgyModel(text(value.model ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined), "unknown"));
           const uncached = count(value.input_tokens);
           const cached = count(value.cache_read_tokens);
           add(rows, {

@@ -58,7 +58,7 @@ describe("host JSON usage collector", () => {
     ["codex", "rollout-cached.jsonl", 9], ["claude", "session.jsonl", 5],
     ["dsh", "session.v3.jsonl.zstd", 6], ["fx", "usage.jsonl", 5],
     ["grok", "unified.jsonl", 5], ["pi", "session.jsonl", 5],
-    ["prime", "session.jsonl", 5], ["antigravity", "usage.jsonl", 8],
+    ["prime", "session.jsonl", 5], ["antigravity", "usage.jsonl", 9],
     ["thaura", "usage.jsonl", 5],
   ] as const)("preserves the existing %s cache when Copilot collection is added", async (agentId, fileName, version) => {
     const directory = await temporaryDirectory();
@@ -660,6 +660,16 @@ describe("host JSON usage collector", () => {
         cache_read_tokens: 3000,
       },
       {
+        message_id: "msg-2",
+        role: "assistant",
+        created_at: "2026-08-09T00:00:30Z",
+        source: "MODEL",
+        model: "gemini-3.8-flash-low",
+        input_tokens: 1000,
+        output_tokens: 50,
+        cache_read_tokens: 500,
+      },
+      {
         type: "PLANNER_RESPONSE",
         role: "assistant",
         created_at: "2026-08-09T00:01:00Z",
@@ -694,7 +704,7 @@ describe("host JSON usage collector", () => {
       expect.objectContaining({
         day: localDay("2026-08-09T00:01:00Z"),
         modelProviderId: "anthropic",
-        model: "claude-opus-5-5-medium",
+        model: "claude-opus-5-5",
         project: "my-cool-project",
         uncachedInputTokens: 10000,
         cachedInputTokens: 8000,
@@ -704,17 +714,17 @@ describe("host JSON usage collector", () => {
       expect.objectContaining({
         day: localDay("2026-08-09T00:00:00Z"),
         modelProviderId: "google",
-        model: "gemini-3.8-flash-high",
+        model: "gemini-3.8-flash",
         project: "my-cool-project",
-        uncachedInputTokens: 5000,
-        cachedInputTokens: 3000,
+        uncachedInputTokens: 6000,
+        cachedInputTokens: 3500,
         cacheWriteTokens: 0,
-        outputTokens: 200,
+        outputTokens: 250,
       }),
       expect.objectContaining({
         day: localDay("2026-08-09T00:03:00Z"),
         modelProviderId: "google",
-        model: "gemini-4-carbon-medium",
+        model: "gemini-4-carbon",
         project: "my-cool-project",
         uncachedInputTokens: 3000,
         cachedInputTokens: 2000,
