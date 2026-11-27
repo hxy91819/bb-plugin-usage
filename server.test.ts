@@ -115,6 +115,8 @@ describe("JSON agent roots", () => {
 
   it("points Antigravity at the provider bridge's own usage log", () => {
     expect(jsonAgentRoots("/home/user", "antigravity", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.gemini/antigravity-cli/brain",
+      "/home/user/.gemini/antigravity/brain",
       "/home/user/.antigravity-acp/usage.jsonl",
     ]);
   });

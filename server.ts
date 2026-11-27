@@ -500,7 +500,7 @@ export function jsonAgentRoots(home: string, agentId: HostJsonAgentId, settings:
     : agentId === "dsh" ? [`${home}/.dsh/sessions`]
     : agentId === "fx" ? [`${home}/.fx/usage.jsonl`]
     : agentId === "grok" ? [`${home}/.grok/logs`]
-    : agentId === "antigravity" ? [`${home}/.antigravity-acp/usage.jsonl`]
+    : agentId === "antigravity" ? [`${home}/.gemini/antigravity-cli/brain`, `${home}/.gemini/antigravity/brain`, `${home}/.antigravity-acp/usage.jsonl`]
     : agentId === "thaura" ? [`${home}/.thaura/usage.jsonl`]
     : agentId === "prime" ? resolvedPrimeRoots
     : [`${home}/.pi/agent/sessions`, `${home}/.bb/pi-bridge-sessions`, ...configuredRoots(settings.piSessionRoots, home).filter((root) => {
