@@ -104,7 +104,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // Other agents retain their existing versions; adding Copilot must not
   // force users without Copilot to reparse unrelated session logs.
   const cacheVersion = input.agentId === "cursor" ? 10 : input.agentId === "codex" ? 9
-    : input.agentId === "copilot" ? 7 : input.agentId === "dsh" ? 6 : input.agentId === "antigravity" ? 7 : 5;
+    : input.agentId === "copilot" ? 7 : input.agentId === "dsh" ? 6 : input.agentId === "antigravity" ? 8 : 5;
   const allowedAgents = new Set<HostJsonAgentId>(["codex", "claude", "codebuddy", "cursor", "copilot", "dsh", "fx", "grok", "pi", "prime", "antigravity", "thaura"]);
   if (!allowedAgents.has(input.agentId)) throw new Error("Unsupported usage agent.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.sinceDay)) throw new Error("Invalid usage history boundary.");
@@ -670,15 +670,15 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
           const usageDay = day(value.created_at);
           if (!usageDay) continue;
           const rawModel = text(value.model ?? (currentAgyModel !== "unknown" ? currentAgyModel : undefined), "unknown");
-          const inputTokens = count(value.input_tokens);
-          const cached = Math.min(inputTokens, count(value.cache_read_tokens));
+          const uncached = count(value.input_tokens);
+          const cached = count(value.cache_read_tokens);
           add(rows, {
             day: usageDay,
             modelProviderId: inferAgyProvider(rawModel),
             model: rawModel,
             project: getAgyProject(filePath),
             loggedCostUsd: null,
-            uncachedInputTokens: inputTokens - cached,
+            uncachedInputTokens: uncached,
             cachedInputTokens: cached,
             cacheWriteTokens: 0,
             outputTokens: count(value.output_tokens),
