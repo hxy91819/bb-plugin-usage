@@ -1,3 +1,4 @@
+import Database from "better-sqlite3";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { appendFile, copyFile, mkdir, mkdtemp, readFile, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
@@ -58,7 +59,7 @@ describe("host JSON usage collector", () => {
     ["codex", "rollout-cached.jsonl", 9], ["claude", "session.jsonl", 5],
     ["dsh", "session.v3.jsonl.zstd", 6], ["fx", "usage.jsonl", 5],
     ["grok", "unified.jsonl", 5], ["pi", "session.jsonl", 5],
-    ["prime", "session.jsonl", 5], ["antigravity", "usage.jsonl", 9],
+    ["prime", "session.jsonl", 5], ["antigravity", "usage.jsonl", 10],
     ["thaura", "usage.jsonl", 5],
   ] as const)("preserves the existing %s cache when Copilot collection is added", async (agentId, fileName, version) => {
     const directory = await temporaryDirectory();
@@ -736,6 +737,115 @@ describe("host JSON usage collector", () => {
     const second = await scan("antigravity", join(directory, "brain"), collectorCache);
     expect(second).toMatchObject({ fileCount: 1, changedFileCount: 0, reusedFileCount: 1, failureCount: 0 });
     expect(second.rows).toEqual(first.rows);
+  });
+
+  it("falls back to Antigravity conversation SQLite steps.metadata when transcript PLANNER_RESPONSE omits tokens", async () => {
+    const directory = await temporaryDirectory();
+    const convId = "conv-sqlite-fallback";
+    const brainDir = join(directory, "brain", convId, ".system_generated", "logs");
+    const convDir = join(directory, "conversations");
+    const cacheDir = join(directory, "cache");
+    const collectorCache = join(directory, "collector-cache", "antigravity.json");
+
+    await mkdir(brainDir, { recursive: true });
+    await mkdir(convDir, { recursive: true });
+    await mkdir(cacheDir, { recursive: true });
+
+    await writeFile(join(cacheDir, "conversation_metadata.json"), JSON.stringify({
+      conversations: {
+        [convId]: { summary: { WorkspaceURIs: ["file:///data/code/developer"] } },
+      },
+    }));
+
+    const encodeVarint = (n: number): number[] => {
+      const out: number[] = [];
+      let v = n;
+      while (v >= 0x80) {
+        out.push((v & 0x7f) | 0x80);
+        v = Math.floor(v / 128);
+      }
+      out.push(v);
+      return out;
+    };
+    const encodeUsageMetadata = (modelEnum: number, input: number, output: number, cacheRead: number): Buffer => {
+      const inner = Buffer.from([
+        (1 << 3) | 0, ...encodeVarint(modelEnum),
+        (2 << 3) | 0, ...encodeVarint(input),
+        (3 << 3) | 0, ...encodeVarint(output),
+        ...(cacheRead > 0 ? [(5 << 3) | 0, ...encodeVarint(cacheRead)] : []),
+      ]);
+      return Buffer.from([(9 << 3) | 2, ...encodeVarint(inner.length), ...inner]);
+    };
+
+    const db = new Database(join(convDir, `${convId}.db`));
+    db.exec("CREATE TABLE steps (idx INTEGER PRIMARY KEY, step_type INTEGER, metadata BLOB)");
+    const insert = db.prepare("INSERT INTO steps (idx, step_type, metadata) VALUES (?, ?, ?)");
+    insert.run(1, 15, encodeUsageMetadata(1533, 20830, 196, 120000));
+    insert.run(3, 15, encodeUsageMetadata(1318, 4000, 100, 50000));
+    db.close();
+
+    await writeFile(join(brainDir, "transcript.jsonl"), [
+      {
+        step_index: 0,
+        source: "USER_EXPLICIT",
+        type: "USER_INPUT",
+        created_at: "2026-08-09T01:00:00Z",
+        content: "The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment.",
+      },
+      {
+        step_index: 1,
+        source: "MODEL",
+        type: "PLANNER_RESPONSE",
+        status: "DONE",
+        created_at: "2026-08-09T01:00:05Z",
+        content: "ok",
+      },
+      {
+        step_index: 3,
+        source: "MODEL",
+        type: "PLANNER_RESPONSE",
+        status: "DONE",
+        created_at: "2026-08-09T01:00:10Z",
+        content: "done",
+      },
+      {
+        step_index: 5,
+        source: "MODEL",
+        type: "PLANNER_RESPONSE",
+        status: "DONE",
+        created_at: "2026-08-09T01:00:15Z",
+        content: "no db entry should not emit zero-token row",
+      },
+    ].map((value) => JSON.stringify(value)).join("\n"));
+
+    const result = await scan("antigravity", join(directory, "brain"), collectorCache);
+    expect(result).toMatchObject({ fileCount: 1, changedFileCount: 1, reusedFileCount: 0, failureCount: 0 });
+    expect(result.rows).toEqual([
+      expect.objectContaining({
+        day: localDay("2026-08-09T01:00:10Z"),
+        modelProviderId: "google",
+        model: "gemini-3.8-flash",
+        project: "developer",
+        uncachedInputTokens: 4000,
+        cachedInputTokens: 50000,
+        cacheWriteTokens: 0,
+        outputTokens: 100,
+      }),
+      expect.objectContaining({
+        day: localDay("2026-08-09T01:00:05Z"),
+        modelProviderId: "google",
+        model: "gemini-4-neon",
+        project: "developer",
+        uncachedInputTokens: 20830,
+        cachedInputTokens: 120000,
+        cacheWriteTokens: 0,
+        outputTokens: 196,
+      }),
+    ]);
+
+    const cached = await scan("antigravity", join(directory, "brain"), collectorCache);
+    expect(cached).toMatchObject({ fileCount: 1, changedFileCount: 0, reusedFileCount: 1, failureCount: 0 });
+    expect(cached.rows).toEqual(result.rows);
   });
 
   it("collects completed Copilot sessions once and retains only aggregate metadata", async () => {
